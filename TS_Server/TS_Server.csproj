@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{6A60160A-5A61-4479-8B0A-7A857E32F1BA}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TS_Server</RootNamespace>
+    <AssemblyName>TS_Server</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MySQL.Data">
+      <HintPath>..\ThirdParty\MySql\MySQL.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data.Entity">
+      <HintPath>..\ThirdParty\MySql\MySql.Data.Entity.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Client\TSItemContainer.cs" />
+    <Compile Include="Client\TSParty.cs" />
+    <Compile Include="DataTools\BattleData.cs" />
+    <Compile Include="DataTools\EveData.cs" />
+    <Compile Include="DataTools\SceneData.cs" />
+    <Compile Include="DataTools\SkillData.cs" />
+    <Compile Include="DataTools\TalkData.cs" />
+    <Compile Include="DataTools\TextEncoder.cs" />
+    <Compile Include="DataTools\WarpData.cs" />
+    <Compile Include="PacketHandlers\ActionHandler.cs" />
+    <Compile Include="PacketHandlers\BagHandle.cs" />
+    <Compile Include="PacketHandlers\BattleCommandHandler.cs" />
+    <Compile Include="PacketHandlers\BattleHandler.cs" />
+    <Compile Include="PacketHandlers\ExpressHandler.cs" />
+    <Compile Include="PacketHandlers\GroupHandler.cs" />
+    <Compile Include="PacketHandlers\HotkeyHandler.cs" />
+    <Compile Include="PacketHandlers\ItemHandler.cs" />
+    <Compile Include="PacketHandlers\ModifySkillHandler.cs" />
+    <Compile Include="PacketHandlers\ModifyStatHandler.cs" />
+    <Compile Include="PacketHandlers\MoveHandler.cs" />
+    <Compile Include="PacketHandlers\PartyHandler.cs" />
+    <Compile Include="PacketHandlers\RebornPetHandler.cs" />
+    <Compile Include="PacketHandlers\RelocateHandler.cs" />
+    <Compile Include="PacketHandlers\PetManipHandler.cs" />
+    <Compile Include="PacketHandlers\StorageHandler.cs" />
+    <Compile Include="PacketHandlers\WelcomeHandler.cs" />
+    <Compile Include="DataTools\ItemData.cs" />
+    <Compile Include="DataTools\NpcData.cs" />
+    <Compile Include="PacketCreator.cs" />
+    <Compile Include="PacketHandlers\Authentication.cs" />
+    <Compile Include="PacketHandlers\ChatHandler.cs" />
+    <Compile Include="PacketHandlers\CreateChar.cs" />
+    <Compile Include="PacketHandlers\RequestLogin.cs" />
+    <Compile Include="PacketProcessor.cs" />
+    <Compile Include="PacketReader.cs" />
+    <Compile Include="RandomGen.cs" />
+    <Compile Include="Server\BattleAbstract.cs" />
+    <Compile Include="Server\BattleClasses\BattleCommand.cs" />
+    <Compile Include="Server\BattleClasses\BattleNpcAI.cs" />
+    <Compile Include="Server\BattleClasses\BattleParticipant.cs" />
+    <Compile Include="Server\TSBattlePvp.cs" />
+    <Compile Include="TSServer.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerHandler.cs" />
+    <Compile Include="Client\TSCharacter.cs" />
+    <Compile Include="Client\TSClient.cs" />
+    <Compile Include="Server\TSBattleNPC.cs" />
+    <Compile Include="Server\TSMap.cs" />
+    <Compile Include="Server\TSWorld.cs" />
+    <Compile Include="TSConstants.cs" />
+    <Compile Include="Client\TSEquipment.cs" />
+    <Compile Include="Client\TSItem.cs" />
+    <Compile Include="TSMysqlConnection.cs" />
+    <Compile Include="Client\TSPet.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

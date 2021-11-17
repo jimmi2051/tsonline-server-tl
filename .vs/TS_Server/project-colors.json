@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "6a60160a-5a61-4479-8b0a-7a857e32f1ba": {
+      "ProjectGuid": "6a60160a-5a61-4479-8b0a-7a857e32f1ba",
+      "DisplayName": "TS_Server",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}
