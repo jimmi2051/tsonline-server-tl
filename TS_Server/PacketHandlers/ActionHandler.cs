@@ -13,7 +13,7 @@ namespace TS_Server.PacketHandlers
     {
         public ActionHandler(TSClient client, byte[] data)
         {
-            Console.WriteLine("data =++" + data[1]);
+            
             switch (data[1])
             {
                 case 1: // Click on NPC
@@ -28,6 +28,8 @@ namespace TS_Server.PacketHandlers
                     client.continueMoving();
                     break;
                 case 6: // warp ok
+                    
+                    client.TalkQuestNpc(data, client);
                     client.continueMoving();
                     client.getChar().showOutfit();
                     break;
@@ -64,6 +66,9 @@ namespace TS_Server.PacketHandlers
                             client.getChar().party.UpdateTeamSub(client);
                         }
                     }
+                    break;
+                case 9:
+                    client.selectMenu = (ushort)data[2];
                     break;
                 default:
                     Console.WriteLine("Action Handler : unknown subcode" + data[1]);

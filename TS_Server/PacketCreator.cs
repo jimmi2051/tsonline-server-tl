@@ -127,5 +127,13 @@ namespace TS_Server
                 ret[i] = data[i];
             return ret;
         }
+        public int[] getDataInt()
+        {
+            int[] ret = new int[pos];
+
+            for (int i = 0; i < pos; i++)
+                ret[i] = BitConverter.ToInt32(data,i);
+            return ret;
+        }
     }
 }

@@ -14,7 +14,7 @@ namespace TS_Server.PacketHandlers
         private byte[] msg;
         public ChatHandler(TSClient client, byte[] data)
         {
-            Console.WriteLine("Recv messag ", Encoding.UTF8.GetString(data));
+            
             if (!specialMsg(client, data))
             {
                 switch (data[1])
@@ -70,7 +70,7 @@ namespace TS_Server.PacketHandlers
 
         public bool specialMsg(TSClient client, byte[] data)
         {
-            Console.WriteLine("Recv messag data ", data);
+      
             ushort id;
             ushort amount;
             //byte[] array = new byte[data.Length - 7 + 1];
@@ -79,11 +79,7 @@ namespace TS_Server.PacketHandlers
             byte[] arr = new byte[data.Length - 2];
             Array.Copy(data, 2, arr, 0, data.Length - 2);
             string msg = Encoding.UTF8.GetString(arr);
-            Console.WriteLine("Recv messag specialMsg ", msg);
-            if (msg == "")
-            {
-                Console.WriteLine("BUG ==> ");
-            }
+            
             try
             {
                 if (String.Compare(msg, 0, "/addpet ", 0, 8, true) == 0)
@@ -195,7 +191,7 @@ namespace TS_Server.PacketHandlers
                 }
                 else if (String.Compare(msg, 0, "/battle ", 0, 7, true) == 0)
                 {
-                    Console.WriteLine("come here battle ==> ");
+                    
                     ushort battleid = ushort.Parse(msg.Substring(8));
                     new TSBattleNPC(client, 3, BattleData.battleList[battleid].getGround(), BattleData.battleList[battleid].getNpcId());
                     return true;
