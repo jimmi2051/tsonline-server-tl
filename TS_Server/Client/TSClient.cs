@@ -24,7 +24,8 @@ namespace TS_Server.Client
         public ushort warpPrepare;
         public ushort idNpcTalking;
         public ushort unkIdNpc;
-        public ushort step;
+        public DataTools.Step currentStep;
+        public ushort idxDialog;
         public ushort selectMenu;
         public TSClient(Socket s, String id)
         {
@@ -157,81 +158,163 @@ namespace TS_Server.Client
 
             byte[] _id_talking = new byte[] { data[2], data[3] };
             int id_talking = PacketReader.read16(data, 2);
-            Console.WriteLine(">> Data 1>>" + data[0]);
-            Console.WriteLine(">> Data 1>>" + data[1]);
             client.idNpcTalking = (ushort)id_talking;
 
-            Console.WriteLine(">> Data id_talking>>" + id_talking);
-            Console.WriteLine(">> Data TS Map>>" + client.map.mapid);
-            Console.WriteLine(DataTools.EveData.listNpcOnMap[client.map.mapid]);
+            
             var index = Array.FindIndex(DataTools.EveData.listNpcOnMap[client.map.mapid], row => row.idOnMap == id_talking);
             if (index > -1)
             {
                 ushort idNpc = DataTools.EveData.listNpcOnMap[client.map.mapid][index].idNpc;
-                // Chu Tien trang
-                if (idNpc == 16004)
+                List<DataTools.Quests> questOnMap = DataTools.EveData.questOnMap[client.map.mapid];
+                DataTools.Quests quest = questOnMap.Find(item => item.npcIdOnMap == id_talking);
+                List<DataTools.Step> listStep = quest.steps;
+                DataTools.Step step = listStep.Find(item => item.npcIdInMap == id_talking);
+                List<DataTools.PackageSend> packages = step.packageSend.ToList();
+                currentStep = step;
+                Console.WriteLine("Click NPC ++ " + client.idNpcTalking);
+                Console.WriteLine("idxDialog ++ " + idxDialog);
+                Console.WriteLine("idxDialog ++ " + currentStep.packageSend.Length);
+                if (idxDialog >= currentStep.packageSend.Length-1)
                 {
-
-                    //01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 01 00 00 01 00 00 
-                    //14 01 00 00 00 01 06 03 01 00 00 00 00 00 00 01 00
-                    //20 01 00 00 00 00 01 03 08 00 00 00 00 00 00 22 39
-                    PacketCreator p2 = new PacketCreator(0x14, 1);
-                    p2.add16(0); p2.addByte(0); p2.addByte(1); p2.addByte(6);
-                    p2.addByte(3); p2.addByte(1); p2.add16(0); p2.add16(0);
-                    p2.add16(0); p2.addByte(1); p2.addByte(0);
-                    //PacketCreator storage = new PacketCreator(0x1D, 06);
-                    //client.reply(storage.send());
-                    Console.WriteLine("Senddd click npc Tien Trang  > " + String.Join(",", p2.getData()));
-                    client.reply(p2.send());
+                    client.idNpcTalking = 0;
+                    idxDialog = 0;
                     
-                    return;
                 }
-                Console.WriteLine("ID NPC >> " + idNpc);
-            }
-            int idDialog = 10666;
-            int idDialog2 = DataTools.EveData.listNpcOnMap[client.map.mapid][index].idDialog;
-            if (index > -1 && idDialog2 > 10000 & idDialog2 < 65000)
-            {
-                idDialog = idDialog2;
-                //client.step = 0;
-            }
-            //Console.WriteLine("Recv Click NPC " + ushort.Parse((PacketReader.read16(data, 1) + 2).ToString()));
-            int a = 2051;
-            Console.WriteLine("Haha > " + (byte)(a));
-            Console.WriteLine("Haha 2 > " + (byte)(a >> 8));
-            
-            PacketCreator p = new PacketCreator(0x14, 1);
-            p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
-            client.unkIdNpc = (ushort)(PacketReader.read16(data, 1) + 2);
-            p.add16(ushort.Parse((PacketReader.read16(data, 1) + 2).ToString()));
-            p.add16(0); p.add16(0); p.add16(0);
-            p.add16((ushort)idDialog);//you are hero :))
+                if (idxDialog > 0) 
+                {
+                    idxDialog++;
+                }
+                
+                
 
-            Console.WriteLine("(byte)(b >> 8) " + (byte)(6 >> 8));
-            Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
-            client.reply(p.send());
+
+                byte[] packageToSend = packages.ElementAt(idxDialog).package;
+                PacketCreator p2 = new PacketCreator();
+
+                p2 = new PacketCreator(0x14, 1);
+                p2.addByte(0); p2.addByte(packageToSend[0]); p2.addByte(packageToSend[1]); p2.addByte(packageToSend[2]); p2.addByte(packageToSend[3]);
+                p2.addByte(packageToSend[4]);
+                p2.addByte(packageToSend[5]); p2.addByte(packageToSend[6]);
+
+                p2.addByte(packageToSend[7]);
+                p2.addByte(packageToSend[8]); p2.addByte(packageToSend[9]); p2.addByte(packageToSend[10]); p2.addByte(packageToSend[11]);
+                int idDialog = convertArrayByteToInt(new byte[] { packageToSend[12], packageToSend[13] });
+                ushort idDialog_2 = (ushort)(PacketReader.read16(packageToSend, 12));
+
+                p2.add16(idDialog_2);
+                Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
+                client.reply(p2.send());
+               
+                //// Chu Tien trang
+                //if (idNpc == 16004 | id_talking == 3 || id_talking == 2 || id_talking == 1)
+                //{
+                //    // User talk
+                //    //14 01 00 00 00 02 01 07 00 00 00 00 00 00 00 7F 28    
+                //    // NPC Talk
+                //    //14 01 00 00 00 03 01 03 01 00 00 00 00 00 00 CA 28
+                //    // User talk
+                //    //14 01 00 00 00 04 01 07 00 00 00 00 00 00 00 CB 28
+                //    // NPC Talk
+                //    //14 01 00 00 00 05 01 03 01 00 00 00 00 00 00 CC 28
+                //    // NPC talk
+                //    //14 01 00 00 00 06 01 03 01 00 00 00 00 00 00 CD 28
+
+                //    PacketCreator p2 = new PacketCreator();
+
+
+                //    Console.WriteLine("ID NPC >> " + idNpc);
+                //    p2 = new PacketCreator(0x14, 1);
+                //    p2.addByte(0); p2.addByte(2); p2.addByte(0); p2.addByte(5); p2.addByte(1);
+                //    p2.addByte(52);
+                //    p2.addByte(0xC3); p2.addByte(1); 
+
+                //    p2.addByte(2);
+                //    p2.addByte(0); p2.addByte(0); p2.addByte(0); p2.addByte(0);
+                //    p2.add16(0);
+                //    Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
+                //    //client.getChar().addPet(idNpc, 0, 0);
+                //    client.reply(p2.send());
+
+                //    //client.getChar().inventory.addItem(10168, 1, true);
+
+
+
+
+                //    return;
+                //}
+
+            }
+            //int idDialog = 10666;
+            //int idDialog2 = DataTools.EveData.listNpcOnMap[client.map.mapid][index].idDialog;
+            //if (index > -1 && idDialog2 > 10000 & idDialog2 < 65000)
+            //{
+            //    idDialog = idDialog2;
+            //    //client.step = 0;
+            //}
+
+
+            //PacketCreator p = new PacketCreator(0x14, 1);
+            //p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
+            //client.unkIdNpc = (ushort)(PacketReader.read16(data, 1) + 2);
+            //p.add16(ushort.Parse((PacketReader.read16(data, 1) + 2).ToString()));
+            //p.add16(0); p.add16(0); p.add16(0);
+            //p.add16((ushort)idDialog);//you are hero :))
+
+            //Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
+            //client.reply(p.send());
         }
         public void TalkQuestNpc(byte[] data, TSClient client)
         {
-            if (client.idNpcTalking > 0 && client.selectMenu == 31)
+            //if (client.idNpcTalking > 0 && client.selectMenu == 31)
+            //{
+            //    PacketCreator storage = new PacketCreator(0x1D, 06);
+            //    client.reply(storage.send());
+            //}
+            
+            if (client.idNpcTalking > 0 & idxDialog < currentStep.packageSend.Length-1)
             {
-                PacketCreator storage = new PacketCreator(0x1D, 06);
-                client.reply(storage.send());
+                idxDialog++;
+                List<DataTools.PackageSend> packages = currentStep.packageSend.ToList();
+                byte[] packageToSend = packages.ElementAt(idxDialog).package;
+
+                PacketCreator p2 = new PacketCreator();
+
+                p2 = new PacketCreator(0x14, 1);
+                p2.addByte(0); p2.addByte(packageToSend[0]); p2.addByte(packageToSend[1]); p2.addByte(packageToSend[2]); p2.addByte(packageToSend[3]);
+                p2.addByte(packageToSend[4]);
+                p2.addByte(packageToSend[5]); p2.addByte(packageToSend[6]);
+
+                p2.addByte(packageToSend[7]);
+                p2.addByte(packageToSend[8]); p2.addByte(packageToSend[9]); p2.addByte(packageToSend[10]); p2.addByte(packageToSend[11]);
+                ushort idDialog_2 = (ushort)(PacketReader.read16(packageToSend, 12));
+
+                p2.add16(idDialog_2);
+                Console.WriteLine("Senddd click npc > sm " + String.Join(",", p2.getData()));
+                
+                client.reply(p2.send());
             }
-            if (client.idNpcTalking > 0 & client.step < 1)
+            else
             {
-                PacketCreator p = new PacketCreator(0x14, 1);
-                p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
-                p.add16(client.unkIdNpc);
-                p.add16(0); p.add16(0); p.add16(0);
-                p.add16(10666);//you are hero :))
+                client.idNpcTalking = 0;
+                idxDialog = 0;
+                client.continueMoving();
+            }
+            Console.WriteLine("Click NPC ++ " + client.idNpcTalking);
+            Console.WriteLine("idxDialog ++ " + idxDialog);
+            //if (client.idNpcTalking > 0 & client.step < 1)
+            //{
+            //    PacketCreator p = new PacketCreator(0x14, 1);
+            //    p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
+            //    p.add16(client.unkIdNpc);
+            //    p.add16(0); p.add16(0); p.add16(0);
+            //    p.add16(10666);//you are hero :))
 
 
-                //Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
-                client.reply(p.send());
-                client.step++;
-            }
-            return;      
+            //    //Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
+            //    client.reply(p.send());
+            //    client.step++;
+            //}
+           
         }
         public void UImportant()
         {
@@ -320,7 +403,7 @@ namespace TS_Server.Client
             {
                 return -1;
             }
-          
+
         }
     }
 }

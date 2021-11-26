@@ -60,6 +60,20 @@ namespace TS_Server.Server
                     listMap[dest[0]].addPlayerWarp(client, dest[1], dest[2]);
                     return;
                 }
+                else if (warpid == 2 & start == 10851)
+                {
+                   
+                        if (!listMap.ContainsKey(12003))
+                        {
+                            listMap.Add(12003, new TSMap(this, 12003));
+                        }
+                        client.getChar().mapID = 12003;
+                        client.getChar().mapX = 555;
+                        client.getChar().mapY = 555;
+                        listMap[12003].addPlayerWarp(client, 555, 555);
+
+                    
+                }
                 else
                 {
                     Console.WriteLine("Warp data helper : warpid " + warpid + " not found");
@@ -78,6 +92,7 @@ namespace TS_Server.Server
                     EveData.loadCoor(start, 12000, warpid);
                 }
             }
+          
             else
             {
                 Console.WriteLine("Warp data helper : mapid " + start + " warpid " + warpid + " not found");

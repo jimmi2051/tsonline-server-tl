@@ -23,18 +23,20 @@ namespace TS_Server.PacketHandlers
                     break;
                 case 2: // Collide With NPC
                     client.continueMoving();
+                    Console.WriteLine("come here ne kuuu");
                     break;
                 case 4: // Click on Trigger
                     client.continueMoving();
                     break;
                 case 6: // warp ok
-                    
+                    Console.WriteLine("Finished quest");
                     client.TalkQuestNpc(data, client);
-                    client.continueMoving();
+                    //client.continueMoving();
                     client.getChar().showOutfit();
                     break;
                 case 8: //initiate warp
                     {
+                        Console.WriteLine("WRAPPP HERE quest");
                         ///- Send Enter Door action response
                         var p = new PacketCreator(20);
                         p.add8(0x07); client.reply(p.send());
@@ -69,6 +71,7 @@ namespace TS_Server.PacketHandlers
                     break;
                 case 9:
                     client.selectMenu = (ushort)data[2];
+                    Console.WriteLine(">>> " + client.selectMenu);
                     break;
                 default:
                     Console.WriteLine("Action Handler : unknown subcode" + data[1]);

@@ -14,7 +14,7 @@ namespace TS_Server.PacketHandlers
         private byte[] msg;
         public ChatHandler(TSClient client, byte[] data)
         {
-            
+
             if (!specialMsg(client, data))
             {
                 switch (data[1])
@@ -22,7 +22,7 @@ namespace TS_Server.PacketHandlers
                     case 1: // All
                         {
                             msg = new byte[data.Length - 2];
-                            Array.Copy(data,2,msg,0,msg.Length);
+                            Array.Copy(data, 2, msg, 0, msg.Length);
                             byte[] packet = FillMessageData(client, (byte)ChatMsg.CHAT_MSG_ALL, msg);
                             client.getChar().replyToAll(packet, false);
                         }
@@ -41,7 +41,7 @@ namespace TS_Server.PacketHandlers
                             if (target != null)
                             {
                                 msg = new byte[data.Length - 6];
-                                Array.Copy(data, 6, msg, 0, msg.Length); 
+                                Array.Copy(data, 6, msg, 0, msg.Length);
                                 byte[] packet = FillMessageData(client, (byte)ChatMsg.CHAT_MSG_WHISPER, msg);
                                 target.reply(packet);
                             }
@@ -55,7 +55,7 @@ namespace TS_Server.PacketHandlers
                     case 5: // Team
                         {
                             msg = new byte[data.Length - 2];
-                            Array.Copy(data, 2, msg, 0, msg.Length); 
+                            Array.Copy(data, 2, msg, 0, msg.Length);
                             byte[] packet = FillMessageData(client, (byte)ChatMsg.CHAT_MSG_PARTY, msg);
                             client.getChar().replyToTeam(packet);
                         }
@@ -70,22 +70,30 @@ namespace TS_Server.PacketHandlers
 
         public bool specialMsg(TSClient client, byte[] data)
         {
-      
+
             ushort id;
             ushort amount;
             //byte[] array = new byte[data.Length - 7 + 1];
             //Array.Copy(data, 6, array, 0, data.Length - 6);
-           // string msg = Encoding.ASCII.GetString(array);
+            // string msg = Encoding.ASCII.GetString(array);
             byte[] arr = new byte[data.Length - 2];
             Array.Copy(data, 2, arr, 0, data.Length - 2);
             string msg = Encoding.UTF8.GetString(arr);
-            
+
             try
             {
                 if (String.Compare(msg, 0, "/addpet ", 0, 8, true) == 0)
                 {
                     id = UInt16.Parse(msg.Substring(8));
-                    client.getChar().addPet(id, 0);
+                    // Pet not quest
+                    client.getChar().addPet(id, 0, 1);
+                    return true;
+                }
+                else if (String.Compare(msg, 0, "/addpetq ", 0, 8, true) == 0)
+                {
+                    id = UInt16.Parse(msg.Substring(8));
+                    // Pet not quest
+                    client.getChar().addPet(id, 0, 0);
                     return true;
                 }
                 else if (String.Compare(msg, 0, "/opensto", 0, 8, true) == 0)
@@ -191,7 +199,7 @@ namespace TS_Server.PacketHandlers
                 }
                 else if (String.Compare(msg, 0, "/battle ", 0, 7, true) == 0)
                 {
-                    
+
                     ushort battleid = ushort.Parse(msg.Substring(8));
                     new TSBattleNPC(client, 3, BattleData.battleList[battleid].getGround(), BattleData.battleList[battleid].getNpcId());
                     return true;
@@ -211,8 +219,9 @@ namespace TS_Server.PacketHandlers
                 else
                 {
                     //Console.WriteLine(msg);
-                    if (String.Compare(msg, 0, "/train", 0, 5, true) == 0) {
-                         new TSBattleNPC(client, 3, 0xffff, getRandomBattle(client));
+                    if (String.Compare(msg, 0, "/train", 0, 5, true) == 0)
+                    {
+                        new TSBattleNPC(client, 3, 0xffff, getRandomBattle(client));
                     }
                 }
             }
@@ -238,7 +247,7 @@ namespace TS_Server.PacketHandlers
         }
         public void SendSysMessage(TSClient client, string msg, bool self = false)
         {
-            byte[] packet = FillMessageData(client, (byte)ChatMsg.CHAT_MSG_SYSTEM,Encoding.Default.GetBytes(msg));
+            byte[] packet = FillMessageData(client, (byte)ChatMsg.CHAT_MSG_SYSTEM, Encoding.Default.GetBytes(msg));
             client.getChar().replyToAll(packet, self);
         }
         public void SendGmMessage(TSClient client, string msg, bool self = false)

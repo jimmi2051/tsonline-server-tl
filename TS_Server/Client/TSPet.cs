@@ -21,7 +21,7 @@ namespace TS_Server.Client
         public int skill_pt;
         public byte level, fai, reborn, skill1_lvl, skill2_lvl, skill3_lvl, skill4_lvl;        
         public TSEquipment[] equipment; // helm, armor, weapon, wrist, foot, special;
-        public byte slot, location;
+        public byte slot, location, quest;
         public TSCharacter owner;
 
         public TSPet(TSCharacter chr, byte sl)
@@ -30,6 +30,7 @@ namespace TS_Server.Client
             slot = sl;
             location = 0;
             equipment = new TSEquipment[6];
+            quest = 1;
         }
 
         public TSPet(TSCharacter chr, int sid, byte sl)
@@ -39,6 +40,16 @@ namespace TS_Server.Client
             slot = sl;
             location = 0;
             equipment = new TSEquipment[6];
+            quest = 1;
+        }
+
+        public TSPet(TSCharacter chr, byte sl, byte _quest)
+        {
+            owner = chr;
+            slot = sl;
+            location = 0;
+            equipment = new TSEquipment[6];
+            quest = _quest;
         }
 
         public void loadPetDB()
@@ -71,6 +82,7 @@ namespace TS_Server.Client
             skill2_lvl = data.GetByte("sk2_lvl");
             skill3_lvl = data.GetByte("sk3_lvl");
             skill4_lvl = data.GetByte("sk4_lvl");
+            quest = data.GetByte("quest");
 
             var equip_data = (byte[])data["equip"];
             loadEquipment(equip_data);
@@ -124,9 +136,9 @@ namespace TS_Server.Client
             p.add16((UInt16)agi);
             p.add16((UInt16)hpx);
             p.add16((UInt16)spx);
-            p.addByte(0);
-            p.addByte(fai);
             p.addByte(1);
+            p.addByte(fai);
+            p.addByte(quest);
             p.add16((ushort)skill_pt);
             p.addByte((byte)name.Length);
             p.addBytes(name);
@@ -202,6 +214,7 @@ namespace TS_Server.Client
             else
             { p.addByte(0x02); p.add32((UInt32)(-prop)); }
             p.add32(0);
+            //Console.WriteLine("Receive Exp PET> " + String.Join(",", p.getData()));
             owner.reply(p.send());
         }
 
@@ -229,12 +242,14 @@ namespace TS_Server.Client
             PacketCreator p1 = new PacketCreator(0x0f, 1);
             p1.add32(owner.client.accID);
             p1.addByte(slot); p1.add16(NPCid); p1.add16(0);
-            p1.addByte(1);
+            
+            p1.addByte(quest);
             owner.reply(p1.send());
             PacketCreator p2 = new PacketCreator(0x0f, 7);
             p2.add32(NPCid); p2.addByte(slot); p2.add16(NPCid);
             p2.addZero(7);
-            p2.addByte(1); p2.addByte((byte)name.Length);
+            
+            p2.addByte(quest); p2.addByte((byte)name.Length);
             p2.addBytes(name);
             owner.reply(p2.send());
         }
@@ -248,10 +263,10 @@ namespace TS_Server.Client
                 cmd.CommandText = "UPDATE pet SET name = @name , charid = @charid , npcid = @npcid, level = @level , exp = @curr_exp, exp_tot = @exp_tot , hp = @hp , " + 
                 "sp = @sp , mag = @mag , atk = @atk , def = @def , hpx = @hpx , spx = @spx , agi = @agi , sk_point = @sk_point , " +
                 "fai = @fai , slot = @slot , location = @location , sk1_lvl = @sk1_lvl , sk2_lvl = @sk2_lvl , sk3_lvl = @sk3_lvl , " + 
-                "sk4_lvl = @sk4_lvl, equip = @equip WHERE pet_sid = @pet_sid";
+                "sk4_lvl = @sk4_lvl, equip = @equip, quest = @quest WHERE pet_sid = @pet_sid";
             else
-                cmd.CommandText = "INSERT INTO pet (name , charid , npcid, hp , sp , mag , atk , def , hpx , spx , agi , fai , slot , location) " +
-                    " VALUES (@name , @charid , @npcid, @hp , @sp , @mag , @atk , @def , @hpx , @spx , @agi , @fai , @slot , @location)";
+                cmd.CommandText = "INSERT INTO pet (name , charid , npcid, hp , sp , mag , atk , def , hpx , spx , agi , fai , slot , location, quest) " +
+                    " VALUES (@name , @charid , @npcid, @hp , @sp , @mag , @atk , @def , @hpx , @spx , @agi , @fai , @slot , @location, @quest)";
 
             //convert name from client charset (TIS620 for Thai) back to UTF8 before save to DB
 
@@ -270,6 +285,7 @@ namespace TS_Server.Client
             cmd.Parameters.AddWithValue("@fai",fai);
             cmd.Parameters.AddWithValue("@slot",slot);
             cmd.Parameters.AddWithValue("@location",location);
+            cmd.Parameters.AddWithValue("@quest", quest);
 
             if (!newPet)
             {
@@ -283,6 +299,7 @@ namespace TS_Server.Client
                 cmd.Parameters.AddWithValue("@sk4_lvl", skill4_lvl);
                 cmd.Parameters.AddWithValue("@equip", saveEquipment());
                 cmd.Parameters.AddWithValue("@pet_sid", pet_sid);
+                
             }
 
             cmd.ExecuteNonQuery();
@@ -368,7 +385,7 @@ namespace TS_Server.Client
 
         public void setExp(int amount)
         {
-            if (level >= 250) return;
+            if (level >= 200) return;
            
             totalxp = (uint)(totalxp + amount);
             currentxp += amount;

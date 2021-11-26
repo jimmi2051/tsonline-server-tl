@@ -13,7 +13,7 @@ namespace TS_Server.Server
     public class TSBattleNPC : BattleAbstract
     {
         public ushort npcmapid = 65000; //pk NPC only
-
+        //TSBattleNPC(client, 3, BattleData.battleList[battleid].getGround(), BattleData.battleList[battleid].getNpcId());
         public TSBattleNPC(TSClient c, byte type, ushort npc_mapid, ushort[] listNPC) : base(c,type)
         {
             initAlly(c);
@@ -117,6 +117,7 @@ namespace TS_Server.Server
                     BattleParticipant bp = position[r][c];
                     //note sure, but 3 3 = pk with npcmapid, 3 7 = gate, 1 7 = pk with npcid
                     p.addBytes(bp.announce(3, npcmapid != 65000 ? npcmapid : bp.npc.count).getData());
+                    Console.WriteLine("PK Battle  > " + String.Join(",", p.getData()));
                     battleBroadcast(p.send()); 
                 }
             }

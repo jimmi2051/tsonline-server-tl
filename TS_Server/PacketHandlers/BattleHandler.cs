@@ -14,6 +14,10 @@ namespace TS_Server.PacketHandlers
         {
             switch (data[1])
             {
+                case 1:
+                    Console.WriteLine(">>> handle >>");
+                    client.continueMoving();
+                    break;
                 case 0x2: //pk on map
                     if (data[2] == 3) //pk NPC
                         new TSBattleNPC(client, 3, PacketReader.read16(data, 7), new ushort[] {0,0,0,0, (ushort)PacketReader.read32(data, 3),0,0,0,0,0 });

@@ -282,16 +282,16 @@ namespace TS_Server.Client
             sendUpdateTeam();
         }
 
-        public void addPet(ushort npcid, int bonus) //สัตว์เลี้ยง
+        public void addPet(ushort npcid, int bonus, byte quest) //สัตว์เลี้ยง
         {
             Console.WriteLine(next_pet + " " + npcid);
             for (int i = 0; i < next_pet; i++)
                 if (pet[i].NPCid == npcid) return;
             if (next_pet < 4 && NpcData.npcList.ContainsKey(npcid))
             {
-                pet[next_pet] = new TSPet(this, (byte)(next_pet + 1));
+                pet[next_pet] = new TSPet(this, (byte)(next_pet + 1), quest);
                 pet[next_pet].initPet(NpcData.npcList[npcid]);                            
-                Console.WriteLine("Pet id " + npcid + ", sid " + pet[next_pet].pet_sid + " added in slot " + (next_pet + 1));
+                Console.WriteLine("Pet id " + npcid + ", sid " + pet[next_pet].pet_sid + " added in slot " + (next_pet + 1) + " Quest " + (pet[next_pet].quest));
                 pet[next_pet].sendNewPet();
                 for (int i = 0; i < bonus; i++)
                     pet[next_pet].getSttPoint();
@@ -672,6 +672,7 @@ namespace TS_Server.Client
 
         public void refresh(int prop, byte prop_code, bool team = false)
         {
+           
             var p = new PacketCreator(0x08);
 
             if (party != null && team)
@@ -694,7 +695,7 @@ namespace TS_Server.Client
                 p.add32((UInt32)(-prop));
             }
             p.add32(0);
-
+            //Console.WriteLine("Receive Exp CHAR> " + String.Join(",", p.getData()));
             if (party != null && team)
                 replyToTeam(p.send());
             else
@@ -1283,7 +1284,8 @@ namespace TS_Server.Client
 
             int stt_point_bonus = (int)((pet[pet_battle].level) / (nb_reborn * 2));
             removePet(slot);
-            addPet(pet_rb, stt_point_bonus);
+            // Pet not quest
+            addPet(pet_rb, stt_point_bonus, 1);
         }
 
         public void rideHorse(bool ride, ushort horseid = 0)

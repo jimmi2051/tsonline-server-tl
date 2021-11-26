@@ -49,6 +49,18 @@ namespace TS_Server
                 skCallBack = new AsyncCallback(OnDataReceived);
                 WaitForData(workerSocket, client);
 
+                IPEndPoint remoteIpEndPoint = client.getSocket().RemoteEndPoint as IPEndPoint;
+                IPEndPoint localIpEndPoint = client.getSocket().LocalEndPoint as IPEndPoint;
+                if (remoteIpEndPoint != null)
+                {
+                    // Using the RemoteEndPoint property.
+                    Console.WriteLine("I am connected to " + remoteIpEndPoint.Address + "on port number " + remoteIpEndPoint.Port);
+                }
+                if (localIpEndPoint != null)
+                {
+                    // Using the LocalEndPoint property.
+                    Console.WriteLine("My local IpAddress is :" + localIpEndPoint.Address + "I am connected on port number " + localIpEndPoint.Port);
+                }
                 Console.WriteLine("Client " + clientID + " is connected.");
                 m_mainSocket.BeginAccept(new AsyncCallback(OnClientConnect), null);
             }

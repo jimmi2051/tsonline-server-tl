@@ -651,7 +651,7 @@ namespace TS_Server.Server
                 case 11: // tha luoi -_-
                     if (CatchPet(init, dest))
                     {
-                        init.chr.addPet((ushort)dest.npc.npcid, 0);
+                        init.chr.addPet((ushort)dest.npc.npcid, 0, 1);
                         dest.outBattle = true;
                         // Chua sua effect -.-
                         dest_anim = 0;
