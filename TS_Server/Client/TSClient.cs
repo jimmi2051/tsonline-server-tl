@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using TS_Server.Server;
+using System.Globalization;
 
 namespace TS_Server.Client
 {
@@ -125,7 +126,12 @@ namespace TS_Server.Client
                 disconnect();
             }
         }
-
+        public byte[] appendArray(byte[] arr1, byte[] arr2) {
+            byte[] z = new byte[arr1.Length + arr2.Length];
+            arr1.CopyTo(z, 0);
+            arr2.CopyTo(z, arr1.Length);
+            return z;
+        }
         public void savetoDB()
         {
             var c = new TSMysqlConnection();
@@ -151,6 +157,81 @@ namespace TS_Server.Client
             reply(new PacketCreator(5, 4).send());
             reply(new PacketCreator(0x0F, 0x0A).send());
         }
+        public static byte[] encodeByteWith0xAD(byte[] byte_0)
+        {
+            checked
+            {
+                byte[] array = new byte[byte_0.Length - 1 + 1];
+                int arg_14_0 = 0;
+                int num = byte_0.Length - 1;
+                for (int i = arg_14_0; i <= num; i++)
+                {
+                    array[i] = (byte)(byte_0[i] ^ 0xAD);
+                }
+                return array;
+            }
+        }
+        public static byte[] convertStringToByteArray(string string_0)
+        {
+            checked
+            {
+                byte[] array = new byte[(int)Math.Round(unchecked((double)string_0.Length / 2.0 - 1.0)) + 1];
+                try
+                {
+                    for (int i = 0; i < string_0.Length; i += 2)
+                    {
+                        array[(int)Math.Round((double)i / 2.0)] = byte.Parse(string_0.Substring(i, 2), NumberStyles.HexNumber);
+                    }
+                }
+                catch (Exception expr_62)
+                {
+                    return new byte[] { };
+                }
+                return array;
+            }
+        }
+        public void Sendpacket(string packet)
+        {
+            try
+            {
+                byte[] array = encodeByteWith0xAD(convertStringToByteArray(packet));
+                socket.Send(array, 0, array.Length, SocketFlags.None);
+            }
+            catch (Exception expr_2E)
+            {
+                return;
+            }
+        }
+        public static string convertIntToStr8Byte(int int_2)
+        {
+            return int_2.ToString("X8").Substring(6, 2) + int_2.ToString("X8").Substring(4, 2) + int_2.ToString("X8").Substring(2, 2) + int_2.ToString("X8").Substring(0, 2);
+        }
+        public static byte[] convertIntToArrayByte(uint int_2)
+        {
+            string sp1 = int_2.ToString("X8").Substring(6, 2);
+            byte f1 = byte.Parse(sp1, NumberStyles.HexNumber);
+            string sp2 = int_2.ToString("X8").Substring(4, 2);
+            byte f2 = byte.Parse(sp2, NumberStyles.HexNumber);
+            string sp3 = int_2.ToString("X8").Substring(2, 2);
+            byte f3 = byte.Parse(sp3, NumberStyles.HexNumber);
+            string sp4 = int_2.ToString("X8").Substring(0, 2);
+            byte f4 = byte.Parse(sp4, NumberStyles.HexNumber);
+            return new byte[] { f1, f2, f3, f4 };
+        }
+        public static byte[] convertIntToArrayByte4(int int_2)
+        {
+            Console.WriteLine("INT <> " + int_2 + " PARED " +int_2.ToString("X4"));
+            string sp3 = int_2.ToString("X4").Substring(2, 2);
+            byte f3 = byte.Parse(sp3, NumberStyles.HexNumber);
+            string sp4 = int_2.ToString("X4").Substring(0, 2);
+            byte f4 = byte.Parse(sp4, NumberStyles.HexNumber);
+            return new byte[] { f3, f4 };
+        }
+        public void stopTalking(TSClient client) {
+            client.idNpcTalking = 0;
+            idxDialog = 0;
+            client.selectMenu = 0;
+        }
         public void ClickkNpc(byte[] data, TSClient client)
         {
             byte[] unknow = new byte[] { data[0], data[1] };
@@ -160,7 +241,7 @@ namespace TS_Server.Client
             int id_talking = PacketReader.read16(data, 2);
             client.idNpcTalking = (ushort)id_talking;
 
-            
+
             var index = Array.FindIndex(DataTools.EveData.listNpcOnMap[client.map.mapid], row => row.idOnMap == id_talking);
             if (index > -1)
             {
@@ -168,24 +249,29 @@ namespace TS_Server.Client
                 List<DataTools.Quests> questOnMap = DataTools.EveData.questOnMap[client.map.mapid];
                 DataTools.Quests quest = questOnMap.Find(item => item.npcIdOnMap == id_talking);
                 List<DataTools.Step> listStep = quest.steps;
+                listStep.ForEach(item =>
+                {
+                    Console.WriteLine(" -- Q --" + item.questId);
+                    Console.WriteLine(" -- prevStepIdsQ --" + item.prevStepIds.Count);
+                    Console.WriteLine(" -- nextStepIdsQ --" + item.nextStepIds.Count);
+                    Console.WriteLine(" -- subStepIdsQ --" + item.subStepIds.Count);
+                });
                 DataTools.Step step = listStep.Find(item => item.npcIdInMap == id_talking);
                 List<DataTools.PackageSend> packages = step.packageSend.ToList();
                 currentStep = step;
                 Console.WriteLine("Click NPC ++ " + client.idNpcTalking);
                 Console.WriteLine("idxDialog ++ " + idxDialog);
-                Console.WriteLine("idxDialog ++ " + currentStep.packageSend.Length);
-                if (idxDialog >= currentStep.packageSend.Length-1)
+                Console.WriteLine("currentStep ++ " + currentStep.packageSend.Length);
+                if (idxDialog >= currentStep.packageSend.Length - 1)
                 {
-                    client.idNpcTalking = 0;
-                    idxDialog = 0;
-                    
+                    stopTalking(client);
                 }
-                if (idxDialog > 0) 
+                if (idxDialog > 0)
                 {
                     idxDialog++;
                 }
-                
-                
+
+
 
 
                 byte[] packageToSend = packages.ElementAt(idxDialog).package;
@@ -204,9 +290,9 @@ namespace TS_Server.Client
                 p2.add16(idDialog_2);
                 Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
                 client.reply(p2.send());
-               
+
                 //// Chu Tien trang
-                //if (idNpc == 16004 | id_talking == 3 || id_talking == 2 || id_talking == 1)
+                //if (id_talking == 7 || id_talking == 2 || id_talking == 1)
                 //{
                 //    // User talk
                 //    //14 01 00 00 00 02 01 07 00 00 00 00 00 00 00 7F 28    
@@ -218,20 +304,23 @@ namespace TS_Server.Client
                 //    //14 01 00 00 00 05 01 03 01 00 00 00 00 00 00 CC 28
                 //    // NPC talk
                 //    //14 01 00 00 00 06 01 03 01 00 00 00 00 00 00 CD 28
-
+                //    //14 01 00 00 00 01 06 03 07 00 00 00 00 00 00 04 00
+                //    //14 01 00 00 00 01 07 07 00 00 02 00 00 00 00 00 00
+                //    //14 01 00 00 00 01 07 07 00 00 03 00 00 00 00 00 00
                 //    PacketCreator p2 = new PacketCreator();
 
 
-                //    Console.WriteLine("ID NPC >> " + idNpc);
-                //    p2 = new PacketCreator(0x14, 1);
-                //    p2.addByte(0); p2.addByte(2); p2.addByte(0); p2.addByte(5); p2.addByte(1);
-                //    p2.addByte(52);
-                //    p2.addByte(0xC3); p2.addByte(1); 
 
-                //    p2.addByte(2);
+                //    p2 = new PacketCreator(0x14, 1);
+                //    p2.addByte(0); p2.addByte(0); p2.addByte(0); p2.addByte(1); p2.addByte(7);
+                //    p2.addByte(7);
+                //    p2.addByte(0); p2.addByte(0);
+
+                //    p2.addByte(3);
                 //    p2.addByte(0); p2.addByte(0); p2.addByte(0); p2.addByte(0);
                 //    p2.add16(0);
                 //    Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
+
                 //    //client.getChar().addPet(idNpc, 0, 0);
                 //    client.reply(p2.send());
 
@@ -263,6 +352,7 @@ namespace TS_Server.Client
             //Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
             //client.reply(p.send());
         }
+
         public void TalkQuestNpc(byte[] data, TSClient client)
         {
             //if (client.idNpcTalking > 0 && client.selectMenu == 31)
@@ -270,51 +360,85 @@ namespace TS_Server.Client
             //    PacketCreator storage = new PacketCreator(0x1D, 06);
             //    client.reply(storage.send());
             //}
-            
-            if (client.idNpcTalking > 0 & idxDialog < currentStep.packageSend.Length-1)
+            switch (client.selectMenu)
             {
-                idxDialog++;
-                List<DataTools.PackageSend> packages = currentStep.packageSend.ToList();
-                byte[] packageToSend = packages.ElementAt(idxDialog).package;
+                case 30:
+                    {
+                        PacketCreator p2 = new PacketCreator();
+                        p2 = new PacketCreator(0x1D, 09);
+                        p2.addByte(0);
+                        client.reply(p2.send());
+                        p2 = new PacketCreator(0x1D, 04);
+                        uint my_gold_bank = client.getChar().gold_bank;
+                        byte[] gold_bank = convertIntToArrayByte(my_gold_bank);
+                        p2.addByte(gold_bank[0]);
+                        p2.addByte(gold_bank[1]);
+                        p2.addByte(gold_bank[2]);
+                        p2.addByte(gold_bank[3]);
+                        client.reply(p2.send());
+                        p2 = new PacketCreator(0x1D, 05);
+                        client.reply(p2.send());
+                        p2 = new PacketCreator(0x1D, 09);
+                        p2.addByte(0);
+                        client.reply(p2.send());
+                        break;
+                    }
+                case 31:
+                    {
+                        PacketCreator p2 = new PacketCreator();
+                        p2 = new PacketCreator(0x1D, 06);
+                        client.reply(p2.send());
+                        break;
+                    }
+                case 40:
+                    {
+                        Console.WriteLine("Come here stop talking");
+                        stopTalking(client);
+                        client.continueMoving();
+                        return;
+                    }
+            }
+            if (client.idNpcTalking > 0)
+            {
+                if (idxDialog < currentStep.packageSend.Length - 1)
+                {
+                    idxDialog++;
+                    List<DataTools.PackageSend> packages = currentStep.packageSend.ToList();
+                    byte[] packageToSend = packages.ElementAt(idxDialog).package;
 
-                PacketCreator p2 = new PacketCreator();
+                    PacketCreator p2 = new PacketCreator();
 
-                p2 = new PacketCreator(0x14, 1);
-                p2.addByte(0); p2.addByte(packageToSend[0]); p2.addByte(packageToSend[1]); p2.addByte(packageToSend[2]); p2.addByte(packageToSend[3]);
-                p2.addByte(packageToSend[4]);
-                p2.addByte(packageToSend[5]); p2.addByte(packageToSend[6]);
+                    p2 = new PacketCreator(0x14, 1);
+                    p2.addByte(0); p2.addByte(packageToSend[0]); p2.addByte(packageToSend[1]); p2.addByte(packageToSend[2]); p2.addByte(packageToSend[3]);
+                    p2.addByte(packageToSend[4]);
+                    p2.addByte(packageToSend[5]); p2.addByte(packageToSend[6]);
 
-                p2.addByte(packageToSend[7]);
-                p2.addByte(packageToSend[8]); p2.addByte(packageToSend[9]); p2.addByte(packageToSend[10]); p2.addByte(packageToSend[11]);
-                ushort idDialog_2 = (ushort)(PacketReader.read16(packageToSend, 12));
+                    p2.addByte(packageToSend[7]);
+                    p2.addByte(packageToSend[8]); p2.addByte(packageToSend[9]); p2.addByte(packageToSend[10]); p2.addByte(packageToSend[11]);
+                    ushort idDialog_2 = (ushort)(PacketReader.read16(packageToSend, 12));
 
-                p2.add16(idDialog_2);
-                Console.WriteLine("Senddd click npc > sm " + String.Join(",", p2.getData()));
-                
-                client.reply(p2.send());
+                    p2.add16(idDialog_2);
+                    Console.WriteLine("Senddd click npc > sm " + String.Join(",", p2.getData()));
+
+                    client.reply(p2.send());
+                }
+                else
+                {
+                    client.idNpcTalking = 0;
+                    idxDialog = 0;
+                    client.continueMoving();
+                }
+
             }
             else
             {
-                client.idNpcTalking = 0;
-                idxDialog = 0;
                 client.continueMoving();
             }
-            Console.WriteLine("Click NPC ++ " + client.idNpcTalking);
-            Console.WriteLine("idxDialog ++ " + idxDialog);
-            //if (client.idNpcTalking > 0 & client.step < 1)
-            //{
-            //    PacketCreator p = new PacketCreator(0x14, 1);
-            //    p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
-            //    p.add16(client.unkIdNpc);
-            //    p.add16(0); p.add16(0); p.add16(0);
-            //    p.add16(10666);//you are hero :))
+
+            Console.WriteLine("Click NPC end ++ " + client.idNpcTalking);
+            Console.WriteLine("idxDialog end ++ " + idxDialog);
 
 
-            //    //Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
-            //    client.reply(p.send());
-            //    client.step++;
-            //}
-           
         }
         public void UImportant()
         {
@@ -405,5 +529,6 @@ namespace TS_Server.Client
             }
 
         }
+       
     }
 }

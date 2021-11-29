@@ -59,13 +59,23 @@ namespace TS_Server.DataTools
         public int status;
         public ushort npcIdOnMap;
     }
+
+    public struct ItemOnMap
+    {
+        public ushort idItemOnMap;
+        public ushort idItem;
+        public ushort posX;
+        public ushort posY;
+        public ushort timeDelay;
+    }
     public static class EveData
     {
         public static Dictionary<ushort, EveInfo> eveList = new Dictionary<ushort, EveInfo>();
         public static Dictionary<ushort, Tuple<int, int>> offsets = new Dictionary<ushort, Tuple<int, int>>();
         public static Dictionary<ushort, NpcOnMap[]> listNpcOnMap = new Dictionary<ushort, NpcOnMap[]>();
         public static Dictionary<ushort, List<Quests>> questOnMap = new Dictionary<ushort, List<Quests>>();
-        
+        public static Dictionary<ushort, List<ItemOnMap>> listItemOnMap = new Dictionary<ushort, List<ItemOnMap>>();
+
         //public static object[] arr = new object[] { };
 
         // Reads directly from stream to structure
@@ -225,7 +235,7 @@ namespace TS_Server.DataTools
                 pos += 4;
                 uint posY = read32(data, pos);
                 pos += 6;
-                Console.WriteLine("NB ENtry >> " + id + " - " + posX + "- " + posY);
+                
             }
 
             ushort nb_unk1 = read16(data, pos);
@@ -322,19 +332,14 @@ namespace TS_Server.DataTools
                 int nb_npc = data[pos];
                 pos += 4;
                 //NPC, later
-                //Console.WriteLine("MAP >> " + mapid);
                 List<NpcOnMap> list_on_map = new List<NpcOnMap>();
                 for (int i = 0; i < nb_npc; i++)
                 {
-
                     ushort clickID = (ushort)(data[pos] + (data[pos + 1] << 8));
-
                     pos += 2;
                     ushort npcID = (ushort)(data[pos] + (data[pos + 1] << 8));
-
                     pos += 2;
                     ushort nb1 = (ushort)(data[pos] + (data[pos + 1] << 8));
-
                     pos += (nb1 + 2);
                     byte nb2 = data[pos];
 
@@ -360,19 +365,38 @@ namespace TS_Server.DataTools
                     pos += 41;
                 }
                 listNpcOnMap.Add(mapid, list_on_map.ToArray());
-                ushort nb_entry_exit = read16(data, pos); pos += 2;
+                ushort nb_entry_exit = read16(data, pos);
+                pos++;
+                List<ItemOnMap> listItemOnMaps = new List<ItemOnMap>();
                 for (int i = 0; i < nb_entry_exit; i++)
                 {
-                    uint id = read32(data, pos);
-                    pos += 3;
-                    uint posX = read32(data, pos);
+                    ItemOnMap itemOnMap = new ItemOnMap();
+                    pos++;
+                    if (mapid == 12002) Console.WriteLine("NB Start >> " + data[pos]);
+                    ushort id = data[pos];
+                    itemOnMap.idItemOnMap = id;
+                    pos++;
+                    ushort idItem = read16(data, pos);
+                    itemOnMap.idItem = idItem;
+                    pos += 2;
+                    ushort posX = read16(data, pos);
+                    itemOnMap.posX = posX;
                     pos += 4;
-                    uint posY = read32(data, pos);
-                    pos += 6;
-                    //Console.WriteLine("NB ENtry >> " + id + " - " + posX + "- " + posY);
+                    ushort posY = read16(data, pos);
+                    itemOnMap.posY = posY;
+                    pos += 4;
+                    if (mapid == 12002) Console.WriteLine("Pos > " + pos);
+                    ushort timeDelay = read16(data, pos);
+                    itemOnMap.timeDelay = timeDelay;
+                    pos++;
+                    if (mapid == 12002) Console.WriteLine("nb entry in map >> ID > " + id + ">> Id Item >> " + idItem);
+                    if (mapid == 12002) Console.WriteLine("nb entry in map >> posX > " + posX + ">> posY >> " + posY + " timeDelay > " + timeDelay);
+                    listItemOnMaps.Add(itemOnMap);
                 }
-
+                listItemOnMap.Add(mapid, listItemOnMaps);
+                pos++;
                 ushort nb_unk1 = read16(data, pos);
+                if (mapid == 12002) Console.WriteLine("nb_unk1 >> " + nb_unk1);
                 pos += 2;
                 for (int i = 0; i < nb_unk1; i++)
                 {
@@ -385,7 +409,7 @@ namespace TS_Server.DataTools
                 }
 
                 ushort nb_unk2 = read16(data, pos);
-                //Console.WriteLine(nb_unk2); 
+                if (mapid == 12002) Console.WriteLine("nb_unk2 >> " + nb_unk2);
                 pos += 2;
                 for (int i = 0; i < nb_unk2; i++)
                 {
@@ -453,31 +477,45 @@ namespace TS_Server.DataTools
                     }
 
                 }
-                int[] firstQuest = new int[] { 0x01, 0x00, 0x06, 0xB9, 0x75, 0xAA, 0xC8, 0xA7, 0xF5 };
-                int newPos = findSubArrInArr(data, pos, firstQuest);
-                if (newPos > -1)
-                {
-                    pos = newPos - 2;
-                    if (mapid == 12002)
-                        Console.WriteLine("come here ===>" + pos);
-                }
+                ushort nb_random = read16(data, pos);
 
+                pos += 2;
+                for (int i = 0; i < nb_random; i++)
+                {
+                    ushort idx = read16(data, pos);
+                    pos += 2;
+                    ushort unk_1 = read16(data, pos);
+                    pos += 2;
+                    ushort unk_2 = read16(data, pos);
+                    pos += 2;
+                    ushort unk_3 = read16(data, pos);
+
+                    ushort total = data[pos];
+                    pos++;
+
+                    pos = pos + total * 2 + 1;
+
+                }
+                pos++;
+                if (mapid == 12002)
+                    Console.WriteLine("come here ===> this pos after rad" + pos);
+                //int[] firstQuest = new int[] { 0x01, 0x00, 0x06, 0xB9, 0x75, 0xAA, 0xC8, 0xA7, 0xF5 };
+                //int newPos = findSubArrInArr(data, pos, firstQuest);
+                //if (newPos > -1)
+                //{
+                //    pos = newPos - 2;
+                //    if (mapid == 12002)
+                //        Console.WriteLine("come here ===>" + pos);
+                //}
+                //pos = 3537;
                 //if (mapid == 12002)
                 //{
                 //    Console.WriteLine(offsets[mapid].Item1);
                 //    Console.WriteLine("pos + " + pos);
                 //}
-
+                pos--;
                 ushort nb_talk_quest = read16(data, pos);
-                //if (mapid == 12002)
-                //    Console.WriteLine("nb_talk_quest + " + nb_talk_quest);
                 pos += 2;
-                //if (mapid == 12002)
-                //{
-
-                //    Console.WriteLine(">>> nb_talk_quest 9769 >>> " + data[pos]);
-
-                //}
                 if (nb_talk_quest == 0)
                 {
                     return;
@@ -488,13 +526,13 @@ namespace TS_Server.DataTools
                 {
                     return;
                 }
-                List<ushort> mapExclude = new List<ushort>() { 10965, 10966, 10987, 10995, 10996, 11552, 14552, 15025 };
-                if (mapExclude.FindIndex(item => item == mapid) >= 0)
-                {
-                    continue;
-                }
+                //List<ushort> mapExclude = new List<ushort>() { 10965, 10966, 10987, 10995, 10996, 11552, 14552, 15025 };
+                //if (mapExclude.FindIndex(item => item == mapid) >= 0)
+                //{
+                //    continue;
+                //}
                 List<Quests> listQuests = new List<Quests>();
-                
+
                 for (int i = 0; i < nb_talk_quest; i++)
                 {
                     Quests quest = new Quests();
@@ -569,7 +607,7 @@ namespace TS_Server.DataTools
                             {
                                 Console.Write("ERROR > MapID " + mapid);
                             }
-                            //addIntToArray(ref prevStepObj., step.stepId);
+
                         }
                         pos += 3;
                         ushort totalPackages = data[pos];
@@ -585,7 +623,7 @@ namespace TS_Server.DataTools
 
                             pg.package = package;
                             listPackages.Add(pg);
-                            if (k ==0 & data[pos+3] == 1 & data[pos+4] == 3)
+                            if (k == 0 & (data[pos + 3] == 1 | data[pos + 3] == 6) & data[pos + 4] == 3)
                             {
                                 npcId = data[pos + 5];
                             }
@@ -599,10 +637,11 @@ namespace TS_Server.DataTools
                             step.packageSend = listPackages.ToArray();
                             steps.Add(step);
                         }
-                           
+
                     }
-                    if (mapid == 12002) {
-                        Console.WriteLine("Step >>>", steps.Count);
+                    if (mapid == 12002)
+                    {
+                        Console.WriteLine("Step >>>" + steps.Count);
                     }
 
                     quest.steps = steps;
@@ -686,10 +725,10 @@ namespace TS_Server.DataTools
 
 
                 }
-                
-                questOnMap.Add(mapid, listQuests);
 
+                questOnMap.Add(mapid, listQuests);
             }
+
         }
         public static int findSubArrInArr(byte[] data, int curr, int[] subArr)
         {

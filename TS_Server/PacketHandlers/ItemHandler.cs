@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TS_Server.Client;
+using TS_Server.DataTools;
 
 namespace TS_Server.PacketHandlers
 {
@@ -53,6 +54,13 @@ namespace TS_Server.PacketHandlers
                         chr.inventory.items[data[2] - 1].useItemChar(data[3], chr);
                     else
                         chr.inventory.items[data[2] - 1].useItemPet(data[3], chr.pet[data[4] - 1]);
+                    break;
+                case 2:
+                    Console.WriteLine("Click ITEM on Map ==> "+data[2]);
+                    ushort mapId = client.map.mapid;
+                    ushort idItemOnMap = data[2];
+                    ushort idItem = EveData.listItemOnMap[mapId].Find(item => item.idItemOnMap == idItemOnMap).idItem;
+                    chr.inventory.addItem(idItem, 1, true);
                     break;
                 case 0x24:
                     new BagHandle(client, data);

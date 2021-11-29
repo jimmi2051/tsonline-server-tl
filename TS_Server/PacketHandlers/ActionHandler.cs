@@ -63,7 +63,6 @@ namespace TS_Server.PacketHandlers
                         if (client.getChar().isTeamLeader())
                         {
                             client.getChar().sendUpdateTeam();
-
                             ///- Update sub-leader
                             client.getChar().party.UpdateTeamSub(client);
                         }
@@ -71,7 +70,6 @@ namespace TS_Server.PacketHandlers
                     break;
                 case 9:
                     client.selectMenu = (ushort)data[2];
-                    Console.WriteLine(">>> " + client.selectMenu);
                     break;
                 default:
                     Console.WriteLine("Action Handler : unknown subcode" + data[1]);

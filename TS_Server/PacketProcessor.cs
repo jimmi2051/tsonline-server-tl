@@ -114,6 +114,11 @@ namespace TS_Server
                 case 0x17:
                     new ItemHandler(client, data);
                     break;
+                // Buy item in shop npc
+                case 0x1b:
+                    Console.WriteLine("Here >>> BUY ITEM");
+                    client.continueMoving();
+                    break;
                 case 0x1c:
                     new ModifySkillHandler(client, data);
                     break;
@@ -125,6 +130,10 @@ namespace TS_Server
                     break;
                 case 0x21:
                     new WelcomeHandler(client, data);
+                    break;
+                case 0x22:
+                    Console.WriteLine("here >>>> ");
+                    client.continueMoving();
                     break;
                 case 0x28:
                     new HotkeyHandler(client, data);

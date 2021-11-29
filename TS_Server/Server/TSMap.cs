@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TS_Server.Client;
+using TS_Server.DataTools;
 
 namespace TS_Server.Server
 {
@@ -41,7 +42,48 @@ namespace TS_Server.Server
             this.addPlayer(client);
             client.map = this;
         }
+        public void initItemOnMap(TSClient client)
+        {
+            ushort mapId = client.map.mapid;
+            List<ItemOnMap> itemOnMaps = EveData.listItemOnMap[mapId];
+            if (itemOnMaps != null)
+            {
+                itemOnMaps.ForEach(item =>
+                {
+                    Console.Write("item >> " + item.idItem);
+                    ushort slot = 1;
+                    PacketCreator p = new PacketCreator();
+                    p = new PacketCreator(23, 3);
+                    byte[] id = TSClient.convertIntToArrayByte4(item.idItem);
+                    byte[] posX =TSClient.convertIntToArrayByte4(item.posX);
+                    byte[] posY = TSClient.convertIntToArrayByte4(item.posY);
+                    Console.WriteLine("pos x ==> " + item.posX);
+                    Console.WriteLine("pos y ==> " + item.posY);
+                    p.addBytes(id);
+                    p.addBytes(posX);
+                    p.addBytes(posY);
+                    //p.addByte(244);
+                    //p.addByte(68);
+                    //p.addByte(4);
+                    //p.addByte(0);
+                    //p.addByte(23);
+                    //p.addByte(9);
+                    //p.addByte(3);
+                    p.addByte(1);
+                    
 
+                    // 244,68,9,0,23,3,83,156,170,0,203,1,1,244,68,4,0,23,9,3,1
+                    // 244 68 9 0 23,3,18,125,72,2,0,0
+                    //p.add16(item.idItem);
+                    //p.add16(item.posX);
+                    //p.add16(item.posY);
+                    Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
+                    //BroadCast(client, p.send(), false);
+                    //BroadCast(client, p.send(), true);
+                    sendToAll(p.send());
+                });
+            }
+        }
         public void addPlayer(TSClient client)
         {
             listPlayers.Add(client.accID, client);
@@ -62,6 +104,9 @@ namespace TS_Server.Server
                 }
             }
             client.getChar().sendUpdateTeam();
+
+            // Init item on map 
+            initItemOnMap(client);
         }
 
         public void removePlayer(uint id)
@@ -138,6 +183,13 @@ namespace TS_Server.Server
                 {
                     c.reply(data);
                 }
+            }
+        }
+        public void sendToAll(byte[] data)
+        {
+            foreach (TSClient c in listPlayers.Values)
+            {
+                c.reply(data);
             }
         }
     }

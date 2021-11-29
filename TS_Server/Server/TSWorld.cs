@@ -13,7 +13,7 @@ namespace TS_Server.Server
         private static TSWorld instance = null;
         public TSServer server;
         public Dictionary<ushort, TSMap> listMap;
-
+        
         public TSWorld(TSServer s)
         {
             server = s;
@@ -21,6 +21,7 @@ namespace TS_Server.Server
             listMap = new Dictionary<ushort, TSMap>();
         }
 
+       
         public static TSWorld getInstance()
         {
             return instance;
@@ -39,8 +40,6 @@ namespace TS_Server.Server
             client.reply(new PacketCreator(new byte[] { 0x29, 0x0E }).send());
 
             ushort start = client.map.mapid;
-            Console.WriteLine("start +++> " + start);
-            Console.WriteLine("warpid +++> " + warpid);
             if (WarpData.warpList.ContainsKey(start))
             {
                 if (WarpData.warpList[start].ContainsKey(warpid))
@@ -70,25 +69,11 @@ namespace TS_Server.Server
                         client.getChar().mapID = 12003;
                         client.getChar().mapX = 555;
                         client.getChar().mapY = 555;
-                        listMap[12003].addPlayerWarp(client, 555, 555);
-
-                    
+                        listMap[12003].addPlayerWarp(client, 555, 555);              
                 }
                 else
                 {
                     Console.WriteLine("Warp data helper : warpid " + warpid + " not found");
-                    //if (start == 15000 & warpid == 27)
-                    //{
-                    //    if (!listMap.ContainsKey(18000))
-                    //    {
-                    //        listMap.Add(18000, new TSMap(this, 18000));
-                    //    }
-                    //    client.getChar().mapID = 18000;
-                    //    client.getChar().mapX = 3410;
-                    //    client.getChar().mapY = 1210;
-                    //    listMap[18000].addPlayerWarp(client, 3410, 1210);
-
-                    //}
                     EveData.loadCoor(start, 12000, warpid);
                 }
             }

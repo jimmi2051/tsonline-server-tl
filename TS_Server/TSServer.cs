@@ -16,7 +16,7 @@ namespace TS_Server
         private TSWorld world;
         private Dictionary<uint, TSClient> listPlayers;
         private Dictionary<byte[], TSCharacter> listNames;
-        
+
         public static TSServer getInstance()
         {
             if (instance == null)
@@ -25,7 +25,7 @@ namespace TS_Server
             }
             return instance;
         }
-
+   
         public void run()
         {
             Console.WriteLine("Loading item data ...");
