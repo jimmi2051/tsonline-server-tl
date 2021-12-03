@@ -216,6 +216,16 @@ namespace TS_Server.PacketHandlers
                     SendGmMessage(client, message, false);
                     return true;
                 }
+                else if (String.Compare(msg, 0, "/test ", 0, 4, true) == 0)
+                {
+                    ushort map_id = client.map.mapid;
+                    
+                    ushort battleid = ushort.Parse(msg.Substring(5));
+
+                    new TSBattleNPC(client, 3, EveData.battleListOnMap[map_id][battleid].getGround(), EveData.battleListOnMap[map_id][battleid].getNpcId());
+                    //new TSBattleNPC(client, 3, EveData.battleListOnMap[map_id][battleid].getGround(), new ushort[] { 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010});
+                    return true;
+                }
                 else
                 {
                     //Console.WriteLine(msg);

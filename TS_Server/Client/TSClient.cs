@@ -28,6 +28,7 @@ namespace TS_Server.Client
         public DataTools.Step currentStep;
         public ushort idxDialog;
         public ushort selectMenu;
+        public ushort idxQ = 0;
         public TSClient(Socket s, String id)
         {
             socket = s;
@@ -247,21 +248,16 @@ namespace TS_Server.Client
             {
                 ushort idNpc = DataTools.EveData.listNpcOnMap[client.map.mapid][index].idNpc;
                 List<DataTools.Quests> questOnMap = DataTools.EveData.questOnMap[client.map.mapid];
-                DataTools.Quests quest = questOnMap.Find(item => item.npcIdOnMap == id_talking);
-                List<DataTools.Step> listStep = quest.steps;
-                listStep.ForEach(item =>
-                {
-                    Console.WriteLine(" -- Q --" + item.questId);
-                    Console.WriteLine(" -- prevStepIdsQ --" + item.prevStepIds.Count);
-                    Console.WriteLine(" -- nextStepIdsQ --" + item.nextStepIds.Count);
-                    Console.WriteLine(" -- subStepIdsQ --" + item.subStepIds.Count);
-                });
-                DataTools.Step step = listStep.Find(item => item.npcIdInMap == id_talking);
+                List<DataTools.Quests> quests = questOnMap.FindAll(item => item.npcIdOnMap == id_talking);
+
+                DataTools.Quests quest = questOnMap.FindLast(item => item.npcIdOnMap == id_talking);
+                List<DataTools.Step> listStep = quest.steps.FindAll(item => item.npcIdInMap == id_talking);
+
+
+                DataTools.Step step = listStep[0];
                 List<DataTools.PackageSend> packages = step.packageSend.ToList();
                 currentStep = step;
-                Console.WriteLine("Click NPC ++ " + client.idNpcTalking);
-                Console.WriteLine("idxDialog ++ " + idxDialog);
-                Console.WriteLine("currentStep ++ " + currentStep.packageSend.Length);
+
                 if (idxDialog >= currentStep.packageSend.Length - 1)
                 {
                     stopTalking(client);
@@ -291,9 +287,17 @@ namespace TS_Server.Client
                 Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
                 client.reply(p2.send());
 
-                //// Chu Tien trang
+
+                //byte[] arr = new byte[] { 244, 68, 17, 0, 20, 1, 0, 0, 0, 1, 6, 3, 2, 0, 0, 0, 0, 0, 0, 6, 0 };
+                ////// Chu Tien trang
                 //if (id_talking == 7 || id_talking == 2 || id_talking == 1)
                 //{
+                //    //byte[] arrSend = new byte[arr.Length];
+                //    //for (int i = 0; i < arr.Length; i++)
+                //    //{
+                //    //    arrSend[i] = (byte)(arr[i] ^ 0xAD);
+                //    //}
+                //    //client.reply(arrSend);
                 //    // User talk
                 //    //14 01 00 00 00 02 01 07 00 00 00 00 00 00 00 7F 28    
                 //    // NPC Talk
@@ -304,24 +308,26 @@ namespace TS_Server.Client
                 //    //14 01 00 00 00 05 01 03 01 00 00 00 00 00 00 CC 28
                 //    // NPC talk
                 //    //14 01 00 00 00 06 01 03 01 00 00 00 00 00 00 CD 28
-                //    //14 01 00 00 00 01 06 03 07 00 00 00 00 00 00 04 00
-                //    //14 01 00 00 00 01 07 07 00 00 02 00 00 00 00 00 00
-                //    //14 01 00 00 00 01 07 07 00 00 03 00 00 00 00 00 00
+
+                //    //14 01 00 00 00 03 00 02 2C 27 01 01 00 00 00 00 00
                 //    PacketCreator p2 = new PacketCreator();
 
+                //    for (int i = 0; i < arr.Length; i++)
+                //    {
 
+                //    }
 
                 //    p2 = new PacketCreator(0x14, 1);
-                //    p2.addByte(0); p2.addByte(0); p2.addByte(0); p2.addByte(1); p2.addByte(7);
-                //    p2.addByte(7);
-                //    p2.addByte(0); p2.addByte(0);
+                //    p2.addByte(0); p2.addByte(0); p2.addByte(0); p2.addByte(3); p2.addByte(0);
+                //    p2.addByte(2);
+                //    p2.addByte(0x2C); p2.addByte(27);
 
-                //    p2.addByte(3);
-                //    p2.addByte(0); p2.addByte(0); p2.addByte(0); p2.addByte(0);
+                //    p2.addByte(01);
+                //    p2.addByte(01); p2.addByte(0); p2.addByte(0); p2.addByte(0);
                 //    p2.add16(0);
                 //    Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
 
-                //    //client.getChar().addPet(idNpc, 0, 0);
+                //    //client.getChar().addPet(14106, 0, 0);
                 //    client.reply(p2.send());
 
                 //    //client.getChar().inventory.addItem(10168, 1, true);
@@ -355,6 +361,7 @@ namespace TS_Server.Client
 
         public void TalkQuestNpc(byte[] data, TSClient client)
         {
+            //return;
             //if (client.idNpcTalking > 0 && client.selectMenu == 31)
             //{
             //    PacketCreator storage = new PacketCreator(0x1D, 06);

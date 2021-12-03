@@ -104,8 +104,14 @@ namespace TS_Server.Server
         {
             for (ushort i = 0; i < listNPC.Length; i++)
             {
-                byte r = (byte)(i % 2);
-                byte c = (byte)(i / 2);
+                byte r = 0;
+                byte c = (byte)(i);
+                if (i >= 5)
+                {
+                    r = 1;
+                    c = (byte)(i - 5);
+                }
+               
                 if (listNPC[i] != 0)
                 {
                     countEnemy++;
@@ -117,7 +123,6 @@ namespace TS_Server.Server
                     BattleParticipant bp = position[r][c];
                     //note sure, but 3 3 = pk with npcmapid, 3 7 = gate, 1 7 = pk with npcid
                     p.addBytes(bp.announce(3, npcmapid != 65000 ? npcmapid : bp.npc.count).getData());
-                    Console.WriteLine("PK Battle  > " + String.Join(",", p.getData()));
                     battleBroadcast(p.send()); 
                 }
             }

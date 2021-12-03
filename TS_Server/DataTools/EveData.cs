@@ -45,6 +45,8 @@ namespace TS_Server.DataTools
         public List<ushort> nextStepIds;
         public List<ushort> subStepIds;
         public ushort mapId;
+        public ushort type; // 2 = Talk | 8 = Reward | A(10) = Select Option
+        public Dictionary<ushort, List<PackageSend>> options;
     }
     public struct Talks
     {
@@ -75,7 +77,7 @@ namespace TS_Server.DataTools
         public static Dictionary<ushort, NpcOnMap[]> listNpcOnMap = new Dictionary<ushort, NpcOnMap[]>();
         public static Dictionary<ushort, List<Quests>> questOnMap = new Dictionary<ushort, List<Quests>>();
         public static Dictionary<ushort, List<ItemOnMap>> listItemOnMap = new Dictionary<ushort, List<ItemOnMap>>();
-
+        public static Dictionary<ushort, Dictionary<ushort,BattleInfo>> battleListOnMap = new Dictionary<ushort, Dictionary<ushort, BattleInfo>>();
         //public static object[] arr = new object[] { };
 
         // Reads directly from stream to structure
@@ -235,7 +237,7 @@ namespace TS_Server.DataTools
                 pos += 4;
                 uint posY = read32(data, pos);
                 pos += 6;
-                
+
             }
 
             ushort nb_unk1 = read16(data, pos);
@@ -385,18 +387,14 @@ namespace TS_Server.DataTools
                     ushort posY = read16(data, pos);
                     itemOnMap.posY = posY;
                     pos += 4;
-                    if (mapid == 12002) Console.WriteLine("Pos > " + pos);
                     ushort timeDelay = read16(data, pos);
                     itemOnMap.timeDelay = timeDelay;
                     pos++;
-                    if (mapid == 12002) Console.WriteLine("nb entry in map >> ID > " + id + ">> Id Item >> " + idItem);
-                    if (mapid == 12002) Console.WriteLine("nb entry in map >> posX > " + posX + ">> posY >> " + posY + " timeDelay > " + timeDelay);
                     listItemOnMaps.Add(itemOnMap);
                 }
                 listItemOnMap.Add(mapid, listItemOnMaps);
                 pos++;
                 ushort nb_unk1 = read16(data, pos);
-                if (mapid == 12002) Console.WriteLine("nb_unk1 >> " + nb_unk1);
                 pos += 2;
                 for (int i = 0; i < nb_unk1; i++)
                 {
@@ -409,7 +407,6 @@ namespace TS_Server.DataTools
                 }
 
                 ushort nb_unk2 = read16(data, pos);
-                if (mapid == 12002) Console.WriteLine("nb_unk2 >> " + nb_unk2);
                 pos += 2;
                 for (int i = 0; i < nb_unk2; i++)
                 {
@@ -455,11 +452,11 @@ namespace TS_Server.DataTools
 
                     try
                     {
-                        continue;
-                        //ushort map1 = mapid;
-                        //ushort warpId = warp_id;
-                        //ushort map2 = dest_map;
-                        //if (map1 == 15000 & map2 == 18000)
+
+                        ushort map1 = mapid;
+                        ushort warpId = warp_id;
+                        ushort map2 = dest_map;
+                        //if (map1 == 15000)
                         //{
                         //    Console.WriteLine("Cur Warp Id >> " + warpId);
                         //    Console.WriteLine("Cur map1 >> " + map1);
@@ -497,8 +494,7 @@ namespace TS_Server.DataTools
 
                 }
                 pos++;
-                if (mapid == 12002)
-                    Console.WriteLine("come here ===> this pos after rad" + pos);
+
                 //int[] firstQuest = new int[] { 0x01, 0x00, 0x06, 0xB9, 0x75, 0xAA, 0xC8, 0xA7, 0xF5 };
                 //int newPos = findSubArrInArr(data, pos, firstQuest);
                 //if (newPos > -1)
@@ -547,7 +543,6 @@ namespace TS_Server.DataTools
                     List<Step> steps = new List<Step>();
                     for (int j = 0; j < totalTalk; j++)
                     {
-
                         Step step = new Step();
                         step.nextStepIds = new List<ushort>();
                         step.prevStepIds = new List<ushort>();
@@ -559,9 +554,31 @@ namespace TS_Server.DataTools
                         step.stepId = idxStep;
                         pos++;
                         ushort type = data[pos];
+                        step.type = type;
                         pos += 2;
-                        ushort questId = read16(data, pos);
-                        step.questId = questId;
+                        ushort questId = read16(data, pos - 1);
+                        if (mapid == 12001 & i == 15) Console.WriteLine("questId >>" + questId);
+                        ushort option = 0;
+                        ushort resBattle = 0;
+                        // Select options
+
+                        if (type == 10)
+                        {
+
+                            option = read16(data, pos + 1);
+
+                        }
+                        if (type == 2)
+                        {
+                            step.questId = questId;
+                        }
+                        if (type == 8)
+                        {
+                            // Res Battle 1 ==> Win 
+                            // Res Battle 2 ==> Lose
+                            resBattle = read16(data, pos + 1);
+                            if (mapid == 12001 & i == 15) Console.WriteLine("resBattle >>" + resBattle);
+                        }
                         pos += 2;
                         ushort unk2 = read16(data, pos);
                         pos += 2;
@@ -627,7 +644,32 @@ namespace TS_Server.DataTools
                             {
                                 npcId = data[pos + 5];
                             }
+                            if (data[pos + 3] == 6 & data[pos + 4] == 3)
+                            {
+                                string msgType = "Option";
+                                ushort idDialogOption = (ushort)(PacketReader.read16(data, pos + 12));
+
+                            }
+                            if (data[pos + 3] == 3)
+                            {
+                                ushort idBattle = (ushort)(PacketReader.read16(data, pos + 12));
+                            }
+                            if (data[pos + 3] == 0 & data[pos + 4] == 3)
+                            {
+                                ushort idNpcInMapJoin = data[pos + 5];
+                            }
+                            if (data[pos + 3] == 0 & data[pos + 4] == 1)
+                            {
+                                ushort idItemReceived = (ushort)(PacketReader.read16(data, pos + 5));
+                                ushort unknown = data[pos + 7];
+                                ushort quantity = data[pos + 8];
+                            }
                             pos += 14;
+                        }
+                        if (option > 1)
+                        {
+                            step.options = new Dictionary<ushort, List<PackageSend>>();
+                            step.options.Add(option, listPackages);
                         }
                         //if (mapid == 12002 & npcId <= nb_npc & npcId > 0) Console.WriteLine("NPC >>> "+ npcId);
                         if (npcId <= nb_npc & npcId > 0)
@@ -727,6 +769,53 @@ namespace TS_Server.DataTools
                 }
 
                 questOnMap.Add(mapid, listQuests);
+
+                ushort nb_battle = read16(data, pos);
+                pos += 2;
+                Dictionary<ushort, BattleInfo> battleList = new Dictionary<ushort, BattleInfo>();
+                ushort[] listNpcId;
+                for (int i = 0; i < nb_battle; i++)
+                {
+                    ushort defaultGround = 876;
+                    ushort index = data[pos];
+                    pos += 5;
+                    ushort quantityNpc = data[pos];
+                    pos += 2;
+                    listNpcId = new ushort[11];
+                    for (int j = 0; j < quantityNpc; j++)
+                    {
+                        ushort indexNpc = read16(data, pos);
+                        pos += 2;
+                        ushort npcId = read16(data, pos);
+                        pos += 2;
+                        ushort posNpc = (ushort)(data[pos] - 1);
+                        pos++;
+                        ushort turnBatle = data[pos];
+                        pos++;
+                        if (mapid == 12001) { Console.WriteLine(" index >>> " + indexNpc);
+                            Console.WriteLine(" index >>> " + indexNpc);
+                            Console.WriteLine(" npcId >>> " + npcId);
+                            Console.WriteLine(" posNpc >>> " + posNpc);
+                            Console.WriteLine(" turnBatle >>> " + turnBatle);
+                        }
+                        if (posNpc > 10) continue;
+                        listNpcId[posNpc] = npcId;
+                    }
+                    battleList.Add(index, new BattleInfo(defaultGround, listNpcId));
+                    ushort unknow_1 = read16(data, pos);
+                    
+                    pos += 2;
+                    ushort unknow_2 = read16(data, pos);
+                    
+                    pos += 2;
+                    for (int j = 0; j < unknow_2; j++)
+                    {
+                        ushort unknow_3 = data[pos + 11];
+                        pos += 12;
+                        pos += unknow_3 * 13;
+                    }
+                }
+                battleListOnMap.Add(mapid, battleList);
             }
 
         }
