@@ -23,7 +23,12 @@ namespace TS_Server.PacketHandlers
                     break;
                 case 2: // Collide With NPC
                     client.continueMoving();
-                    Console.WriteLine("come here ne kuuu");
+                    //if (client.idNpcTalking == 0)
+                    //{
+                    //    client.continueMoving();
+                    //}
+                    //client.TalkQuestNpc(data, client);
+                    Console.WriteLine("Come here Collide");
                     break;
                 case 4: // Click on Trigger
                     client.continueMoving();

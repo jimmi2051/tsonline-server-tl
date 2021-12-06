@@ -55,8 +55,7 @@ namespace TS_Server.PacketHandlers
                     else
                         chr.inventory.items[data[2] - 1].useItemPet(data[3], chr.pet[data[4] - 1]);
                     break;
-                case 2:
-                    Console.WriteLine("Click ITEM on Map ==> "+data[2]);
+                case 2: // Click item on map
                     ushort mapId = client.map.mapid;
                     ushort idItemOnMap = data[2];
                     ushort idItem = EveData.listItemOnMap[mapId].Find(item => item.idItemOnMap == idItemOnMap).idItem;

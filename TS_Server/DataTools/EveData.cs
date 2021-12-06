@@ -27,6 +27,7 @@ namespace TS_Server.DataTools
         public ushort unk_2;
         public ushort unk_3;
         public ushort totalTalking;
+        public byte type;
 
     }
     public struct PackageSend
@@ -41,25 +42,26 @@ namespace TS_Server.DataTools
         public PackageSend[] packageSend;
         public ushort npcIdInMap;
         public ushort npcId;
-        public List<ushort> prevStepIds;
-        public List<ushort> nextStepIds;
         public List<ushort> subStepIds;
-        public ushort mapId;
         public ushort type; // 2 = Talk | 8 = Reward | A(10) = Select Option
-        public Dictionary<ushort, List<PackageSend>> options;
+        public ushort optionId;
+        public ushort idDialog;
+        public ushort qIndex;
+        public ushort resBattle;
     }
     public struct Talks
     {
         public ushort npcIdInMap;
         public byte[] dialog;
     }
-    public struct Quests
+    public struct Quest
     {
         public ushort questId;
         public List<Step> steps;
         public int[] requiredQuests;
         public int status;
         public ushort npcIdOnMap;
+
     }
 
     public struct ItemOnMap
@@ -75,9 +77,10 @@ namespace TS_Server.DataTools
         public static Dictionary<ushort, EveInfo> eveList = new Dictionary<ushort, EveInfo>();
         public static Dictionary<ushort, Tuple<int, int>> offsets = new Dictionary<ushort, Tuple<int, int>>();
         public static Dictionary<ushort, NpcOnMap[]> listNpcOnMap = new Dictionary<ushort, NpcOnMap[]>();
-        public static Dictionary<ushort, List<Quests>> questOnMap = new Dictionary<ushort, List<Quests>>();
+        public static Dictionary<ushort, List<Quest>> questOnMap = new Dictionary<ushort, List<Quest>>();
+        public static Dictionary<ushort, List<Step>> listStepOnMap = new Dictionary<ushort, List<Step>>();
         public static Dictionary<ushort, List<ItemOnMap>> listItemOnMap = new Dictionary<ushort, List<ItemOnMap>>();
-        public static Dictionary<ushort, Dictionary<ushort,BattleInfo>> battleListOnMap = new Dictionary<ushort, Dictionary<ushort, BattleInfo>>();
+        public static Dictionary<ushort, Dictionary<ushort, BattleInfo>> battleListOnMap = new Dictionary<ushort, Dictionary<ushort, BattleInfo>>();
         //public static object[] arr = new object[] { };
 
         // Reads directly from stream to structure
@@ -98,15 +101,6 @@ namespace TS_Server.DataTools
             a = temp.ToArray();
         }
 
-        public static void showList(ushort map_id)
-        {
-            foreach (NpcOnMap npcOnMap in listNpcOnMap[map_id])
-            {
-                Console.WriteLine("Show NPCC ");
-                Console.WriteLine(npcOnMap.idOnMap);
-                Console.WriteLine(npcOnMap.idNpc);
-            }
-        }
         public static bool loadHeaders()
         {
             try
@@ -362,9 +356,16 @@ namespace TS_Server.DataTools
                     npcOnMap.unk_1 = nb1;
                     npcOnMap.unk_2 = nb2;
                     npcOnMap.unk_3 = nb_f;
-                    list_on_map.Add(npcOnMap);
+                    
                     pos += 4;
-                    pos += 41;
+                    pos += 4;
+                    byte type = (byte)(read16(data, pos));
+                    npcOnMap.type = type;
+                    list_on_map.Add(npcOnMap);
+                    pos += 37;
+                    
+                    if (mapid == 12015 & clickID == 1) Console.WriteLine(" type " + type);
+                    
                 }
                 listNpcOnMap.Add(mapid, list_on_map.ToArray());
                 ushort nb_entry_exit = read16(data, pos);
@@ -374,7 +375,7 @@ namespace TS_Server.DataTools
                 {
                     ItemOnMap itemOnMap = new ItemOnMap();
                     pos++;
-                    if (mapid == 12002) Console.WriteLine("NB Start >> " + data[pos]);
+                    
                     ushort id = data[pos];
                     itemOnMap.idItemOnMap = id;
                     pos++;
@@ -440,7 +441,17 @@ namespace TS_Server.DataTools
                 uint X = 0, Y = 0;
                 for (int i = 0; i < nb_warp; i++)
                 {
+
                     ushort warp_id = read16(data, pos);
+                    if (mapid == 12000 & warp_id == 10)
+                    {
+                        Console.WriteLine("Wrap 10 >> ");
+                        for (int sm = pos; sm < pos + 40; sm++)
+                        {
+                            Console.Write(" " + data[sm]);
+                        }
+                        Console.WriteLine();
+                    }
                     pos += 2;
                     ushort dest_map = read16(data, pos);
                     pos += 4;
@@ -527,29 +538,28 @@ namespace TS_Server.DataTools
                 //{
                 //    continue;
                 //}
-                List<Quests> listQuests = new List<Quests>();
-
+                //List<Quest> listQuests = new List<Quest>();
+                List<Step> steps = new List<Step>();
                 for (int i = 0; i < nb_talk_quest; i++)
                 {
-                    Quests quest = new Quests();
+                    Quest quest = new Quest();
                     #region
                     ushort idx = data[pos];
                     pos += 15;
                     ushort totalTalk = data[pos];
                     pos++;
-                    ushort totalSubSteps = 0;
-                    ushort idxSubStep = 0;
-                    ushort idxPrevStep = 0;
-                    List<Step> steps = new List<Step>();
+                    //ushort totalSubSteps = 0;
+                    //ushort idxSubStep = 0;
+                    //ushort idxPrevStep = 0;
+
                     for (int j = 0; j < totalTalk; j++)
                     {
                         Step step = new Step();
-                        step.nextStepIds = new List<ushort>();
-                        step.prevStepIds = new List<ushort>();
+                        step.qIndex = idx;
                         step.subStepIds = new List<ushort>();
-                        step.mapId = mapid;
-                        idxSubStep++;
 
+                        //idxSubStep++;
+                        int fromPos = pos;
                         ushort idxStep = data[pos];
                         step.stepId = idxStep;
                         pos++;
@@ -558,15 +568,19 @@ namespace TS_Server.DataTools
                         pos += 2;
                         ushort questId = read16(data, pos - 1);
                         if (mapid == 12001 & i == 15) Console.WriteLine("questId >>" + questId);
-                        ushort option = 0;
+                        ushort optionId = 0;
                         ushort resBattle = 0;
+                        ushort idBox = 0;
                         // Select options
 
                         if (type == 10)
                         {
-
-                            option = read16(data, pos + 1);
-
+                            ushort idDialog = data[pos - 1];
+                            step.idDialog = idDialog;
+                            optionId = read16(data, pos + 1);
+                            step.optionId = optionId;
+                            //if (mapid == 12001 & i == 15) Console.WriteLine("optionId >> " + optionId + " idDialog "+ idDialog);
+                            if (mapid == 12007) Console.WriteLine("optionId >> " + optionId + " idDialog " + idDialog);
                         }
                         if (type == 2)
                         {
@@ -576,8 +590,22 @@ namespace TS_Server.DataTools
                         {
                             // Res Battle 1 ==> Win 
                             // Res Battle 2 ==> Lose
+                            // Res battle 3 ==> Runout
                             resBattle = read16(data, pos + 1);
-                            if (mapid == 12001 & i == 15) Console.WriteLine("resBattle >>" + resBattle);
+                            if (mapid == 12001)
+                            {
+                                Console.WriteLine("resBattle >>" + resBattle);
+                            }
+                            step.resBattle = resBattle;
+                        }
+
+                        if (type == 3)
+                        {
+                            idBox = data[pos - 1];
+                            if (mapid == 12004)
+                            {
+                                Console.WriteLine("idBox >>" + idBox);
+                            }
                         }
                         pos += 2;
                         ushort unk2 = read16(data, pos);
@@ -588,46 +616,23 @@ namespace TS_Server.DataTools
                         pos += 9;
                         ushort prevStep = data[pos];
                         pos++;
-                        if (data[pos] != 0)
-                        {
-                            totalSubSteps = data[pos];
-                            idxSubStep = 1;
-                            Step prevStepObj = steps.FindLast(item => item.stepId == idxPrevStep & item.mapId == mapid);
-                            if (!(prevStepObj.Equals(null)))
-                            {
-                                prevStepObj.nextStepIds = new List<ushort>();
-
-                                step.prevStepIds = new List<ushort>();
-
-                                prevStepObj.nextStepIds.Add(step.stepId);
-                                step.prevStepIds.Add(prevStepObj.stepId);
-                            }
-                            idxPrevStep = idxStep;
-                        }
-                        else
-                        {
-                            try
-                            {
-
-                                idxSubStep++;
-                                Step prevStepObj = steps.FindLast(item => item.stepId == prevStep & item.mapId == mapid);
-                                if (!(prevStepObj.Equals(null)) & prevStepObj.stepId > 0)
-                                {
-                                    if (prevStepObj.subStepIds.Equals(null))
-                                    {
-                                        prevStepObj.subStepIds = new List<ushort>();
-                                    }
-                                    prevStepObj.subStepIds.Add(step.stepId);
-                                }
-                            }
-                            catch
-                            {
-                                Console.Write("ERROR > MapID " + mapid);
-                            }
-
-                        }
+                        // Here pos is total sub step
                         pos += 3;
                         ushort totalPackages = data[pos];
+                        int toPos = pos;
+                        //if (type == 8)
+                        //{
+
+                        //    if (mapid == 12991)
+                        //    {
+                        //        Console.WriteLine("here >> + " + mapid);
+                        //        for (int m = fromPos; m < toPos; m++)
+                        //        {
+                        //            Console.Write(" " + data[m]);
+                        //        }
+                        //        Console.WriteLine();
+                        //    }
+                        //}
                         pos++;
                         List<PackageSend> listPackages = new List<PackageSend>();
                         ushort npcId = 0;
@@ -637,18 +642,20 @@ namespace TS_Server.DataTools
                             data[pos+5], data[pos+6], data[pos+7], data[pos+8], data[pos+9], data[pos+10],
                             data[pos+11], data[pos+12], data[pos+13]};
                             PackageSend pg = new PackageSend();
-
                             pg.package = package;
                             listPackages.Add(pg);
-                            if (k == 0 & (data[pos + 3] == 1 | data[pos + 3] == 6) & data[pos + 4] == 3)
+                            if (idBox > 0)
+                            {
+                                step.npcIdInMap = idBox;
+                            }
+                            else if (k == 0 & (data[pos + 3] == 1 | data[pos + 3] == 6) & data[pos + 4] == 3)
                             {
                                 npcId = data[pos + 5];
+                                step.npcIdInMap = npcId;
                             }
                             if (data[pos + 3] == 6 & data[pos + 4] == 3)
                             {
-                                string msgType = "Option";
                                 ushort idDialogOption = (ushort)(PacketReader.read16(data, pos + 12));
-
                             }
                             if (data[pos + 3] == 3)
                             {
@@ -666,29 +673,19 @@ namespace TS_Server.DataTools
                             }
                             pos += 14;
                         }
-                        if (option > 1)
-                        {
-                            step.options = new Dictionary<ushort, List<PackageSend>>();
-                            step.options.Add(option, listPackages);
-                        }
+                        //if (option > 1)
+                        //{
+                        //    step.options = new Dictionary<ushort, List<PackageSend>>();
+                        //    step.options.Add(option, listPackages);
+                        //}
                         //if (mapid == 12002 & npcId <= nb_npc & npcId > 0) Console.WriteLine("NPC >>> "+ npcId);
-                        if (npcId <= nb_npc & npcId > 0)
-                        {
-                            step.npcIdInMap = npcId;
-                            quest.npcIdOnMap = npcId;
-                            step.packageSend = listPackages.ToArray();
-                            steps.Add(step);
-                        }
-
-                    }
-                    if (mapid == 12002)
-                    {
-                        Console.WriteLine("Step >>>" + steps.Count);
+                        step.packageSend = listPackages.ToArray();
+                        steps.Add(step);
                     }
 
-                    quest.steps = steps;
+                    //quest.steps = steps;
 
-                    listQuests.Add(quest);
+                    //listQuests.Add(quest);
                     //TalkQuestItem talkQuestItem = new TalkQuestItem();
                     //ushort id_talk_quest = data[pos];
                     //talkQuestItem.idTalking = id_talk_quest;
@@ -768,7 +765,8 @@ namespace TS_Server.DataTools
 
                 }
 
-                questOnMap.Add(mapid, listQuests);
+                listStepOnMap.Add(mapid, steps);
+                //questOnMap.Add(mapid, listQuests);
 
                 ushort nb_battle = read16(data, pos);
                 pos += 2;
@@ -792,21 +790,21 @@ namespace TS_Server.DataTools
                         pos++;
                         ushort turnBatle = data[pos];
                         pos++;
-                        if (mapid == 12001) { Console.WriteLine(" index >>> " + indexNpc);
-                            Console.WriteLine(" index >>> " + indexNpc);
-                            Console.WriteLine(" npcId >>> " + npcId);
-                            Console.WriteLine(" posNpc >>> " + posNpc);
-                            Console.WriteLine(" turnBatle >>> " + turnBatle);
-                        }
+                        //if (mapid == 12001) { Console.WriteLine(" index >>> " + indexNpc);
+                        //    Console.WriteLine(" index >>> " + indexNpc);
+                        //    Console.WriteLine(" npcId >>> " + npcId);
+                        //    Console.WriteLine(" posNpc >>> " + posNpc);
+                        //    Console.WriteLine(" turnBatle >>> " + turnBatle);
+                        //}
                         if (posNpc > 10) continue;
                         listNpcId[posNpc] = npcId;
                     }
                     battleList.Add(index, new BattleInfo(defaultGround, listNpcId));
                     ushort unknow_1 = read16(data, pos);
-                    
+
                     pos += 2;
                     ushort unknow_2 = read16(data, pos);
-                    
+
                     pos += 2;
                     for (int j = 0; j < unknow_2; j++)
                     {

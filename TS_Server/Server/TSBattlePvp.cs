@@ -268,7 +268,7 @@ namespace TS_Server.Server
                     chr.client.continueMoving();
                 }
             }
-            Console.WriteLine("Battle has ended");
+            Console.WriteLine("Battle has ended ++ > " + win.ToString() );
         }
     }
 }

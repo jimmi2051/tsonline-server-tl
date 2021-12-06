@@ -373,11 +373,20 @@ namespace TS_Server.Server
                     p.add16(0); //win / lose ?
                     battleBroadcast(p.send());
                     battleBroadcast(new PacketCreator(new byte[] { 0xb, 1, 3, (byte)i, 0 }).send()); //char walk out
-
+                    if (chr.client.idxQ > 0)
+                    {
+                        if (win)
+                        {
+                            chr.client.resBattle = 1;
+                        }
+                        else if (chr.client.resBattle == 0) chr.client.resBattle = 2;
+                        chr.client.processStep(chr.client);
+                        return;
+                    }
                     chr.client.continueMoving();
                 }
             }
-            Console.WriteLine("Battle has ended");
+            Console.WriteLine("Battle has ended ++ > " + win.ToString());
         }
     }
 }

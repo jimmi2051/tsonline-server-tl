@@ -259,6 +259,7 @@ namespace TS_Server.Server
         {
             if (c.skill == 18001) //run
             {
+                position[c.init_row][c.init_col].chr.client.resBattle = 3;
                 //insert here some RNG
                 if (c.init_col == 2) // leader run
                     finish = 2;
@@ -659,6 +660,7 @@ namespace TS_Server.Server
                     }
                     break;
                 case 12: // run
+                    Console.WriteLine("Come here run out ");
                     break;
                 case 13: //item, later
                     if (hit == 1)

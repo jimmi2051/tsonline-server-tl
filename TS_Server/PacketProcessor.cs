@@ -91,7 +91,6 @@ namespace TS_Server
                     new CreateChar(client, data);
                     break;
                 case 0x0b: // battle fuck yeah
-                    Console.WriteLine("Come here >>>");
                     new BattleHandler(client, data);
                     break;
                 case 0x0c:
