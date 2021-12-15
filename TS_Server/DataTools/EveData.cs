@@ -41,13 +41,21 @@ namespace TS_Server.DataTools
         public ushort stepId;
         public PackageSend[] packageSend;
         public ushort npcIdInMap;
-        public ushort npcId;
         public List<ushort> subStepIds;
-        public ushort type; // 2 = Talk | 8 = Reward | A(10) = Select Option
+        public ushort type; // 2 = Talk | 8 = Reward | A(10) = Select Option | 7 = Condition 
         public ushort optionId;
         public ushort idDialog;
         public ushort qIndex;
         public ushort resBattle;
+        public ushort status;
+        public ushort requiredLevel;
+        public Dictionary<ushort, List<ushort>> requiredQ;
+        public Dictionary<ushort, List<ushort>> receivedQ;
+        public List<ushort> requiredNpc;
+        public Dictionary<ushort, ushort> requiredItem;
+        public bool requiredSlotPet;
+        public bool normalTalk;
+        public List<ushort> rootBit;
     }
     public struct Talks
     {
@@ -443,15 +451,15 @@ namespace TS_Server.DataTools
                 {
 
                     ushort warp_id = read16(data, pos);
-                    if (mapid == 12000 & warp_id == 10)
-                    {
-                        Console.WriteLine("Wrap 10 >> ");
-                        for (int sm = pos; sm < pos + 40; sm++)
-                        {
-                            Console.Write(" " + data[sm]);
-                        }
-                        Console.WriteLine();
-                    }
+                    //if (mapid == 12000 & warp_id == 10)
+                    //{
+                    //    Console.WriteLine("Wrap 10 >> ");
+                    //    for (int sm = pos; sm < pos + 40; sm++)
+                    //    {
+                    //        Console.Write(" " + data[sm]);
+                    //    }
+                    //    Console.WriteLine();
+                    //}
                     pos += 2;
                     ushort dest_map = read16(data, pos);
                     pos += 4;
@@ -504,23 +512,7 @@ namespace TS_Server.DataTools
                     pos = pos + total * 2 + 1;
 
                 }
-                pos++;
-
-                //int[] firstQuest = new int[] { 0x01, 0x00, 0x06, 0xB9, 0x75, 0xAA, 0xC8, 0xA7, 0xF5 };
-                //int newPos = findSubArrInArr(data, pos, firstQuest);
-                //if (newPos > -1)
-                //{
-                //    pos = newPos - 2;
-                //    if (mapid == 12002)
-                //        Console.WriteLine("come here ===>" + pos);
-                //}
-                //pos = 3537;
-                //if (mapid == 12002)
-                //{
-                //    Console.WriteLine(offsets[mapid].Item1);
-                //    Console.WriteLine("pos + " + pos);
-                //}
-                pos--;
+                
                 ushort nb_talk_quest = read16(data, pos);
                 pos += 2;
                 if (nb_talk_quest == 0)
@@ -542,24 +534,137 @@ namespace TS_Server.DataTools
                 List<Step> steps = new List<Step>();
                 for (int i = 0; i < nb_talk_quest; i++)
                 {
-                    Quest quest = new Quest();
                     #region
                     ushort idx = data[pos];
                     pos += 15;
                     ushort totalTalk = data[pos];
                     pos++;
-                    //ushort totalSubSteps = 0;
-                    //ushort idxSubStep = 0;
-                    //ushort idxPrevStep = 0;
-
+                    ushort conditions = 0;
+                    ushort condition = 0;
+                    ushort idxStepAddCondition = 0;
                     for (int j = 0; j < totalTalk; j++)
                     {
+                        if (conditions > 1 & condition < conditions)
+                        {
+                            //01 3C A8 01 02 00 00 00 00 00 00 00 00 00 00 00 00 02 00 00 00 00 
+                            //07 00 00 01 04 0F 00 00 00 00 00 00 00 00 00 00 00 04 00 00 00 00
+                            //02 11 27 01 05 01 00 00 00 00 00 00 00 00 00 00 00 0C 01 00 00 01
+                            //07 05 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 0F 00 00 00 00
+                            //09 00 00 01 06 86 2F 00 00 00 00 00 00 00 00 00 00 09 00 00 00 00
+                            condition++;
+                            
+                            pos++;
+                            ushort typeCondition = data[pos];
+                            pos++;
+
+                            ushort questRequired = read16(data, pos); // quest Id or Item Id 
+                            ushort unknown_1 = data[pos]; // 0 + 5 
+                           
+                            ushort unknown_2 = data[pos + 1]; // 0
+                            pos += 2;
+                           
+                           
+                            ushort quantity = data[pos]; // 1 - 2 or quantity
+                            ushort unknown_4 = data[pos+1]; // 0 - 4 - 5 
+                            pos += 2;
+                            ushort requiredLevel = read16(data, pos); // Level required - NPC ID 
+                            ushort required = data[pos]; // 0 1 2
+                            if (mapid == 12001 & i == 15)
+                            {
+                                Console.WriteLine(" unknown_1 >>> " + unknown_1);
+                                Console.WriteLine(" unknown_2 >>> " + quantity);
+                            }
+                            if (typeCondition == 7)
+                            {
+                                Step tempStep = steps.ElementAt(idxStepAddCondition - 1);
+                                steps[idxStepAddCondition - 1] = tempStep;
+                                if (unknown_1 == 0 & requiredLevel > 0)
+                                {
+                                    tempStep.requiredLevel = requiredLevel;
+                                }
+                                if (unknown_1 == 5 & quantity == 1)
+                                {
+                                    if (mapid == 12001 & i == 15)
+                                    {
+                                        Console.WriteLine("  tempStep.stepId >>> " + tempStep.stepId);
+                                    }
+                                    // Full pet 
+                                    tempStep.requiredSlotPet = true;
+                                }
+                                if (unknown_1 == 5 && quantity == 2)
+                                {
+                                    // available slot pet 
+                                    tempStep.requiredSlotPet = false;
+                                }
+                                steps[idxStepAddCondition - 1] = tempStep;
+                            }
+                            if (typeCondition == 2)
+                            {
+                                Step tempStep = steps.ElementAt(idxStepAddCondition - 1);
+                
+                                if (required == 1 | required == 2)
+                                {
+                                    if (!tempStep.requiredQ.ContainsKey(questRequired)) {
+                                        tempStep.requiredQ.Add(questRequired, new List<ushort> { quantity, unknown_4, required });
+                                    }
+                                    //ushort temp = (ushort)(questRequired + quantity + unknown_4 + required);
+                                    
+                                }
+                                if (required == 0 || unknown_1 == 2)
+                                {
+                                    //ushort temp = (ushort)(questRequired + quantity + unknown_4 + required);
+                                    if (!tempStep.receivedQ.ContainsKey(questRequired))
+                                    {
+                                        tempStep.receivedQ.Add(questRequired, new List<ushort> { quantity, unknown_4, required });
+                                    }
+                                        
+                                }
+                                steps[idxStepAddCondition - 1] = tempStep;
+                            }
+                            if (typeCondition == 9)
+                            {
+                                Step tempStep = steps.ElementAt(idxStepAddCondition - 1);
+                                tempStep.requiredNpc.Add(requiredLevel);
+                                steps[idxStepAddCondition - 1] = tempStep;
+                            }
+                            if (typeCondition == 1)
+                            {
+                                Step tempStep = steps.ElementAt(idxStepAddCondition - 1);
+                                tempStep.requiredItem.Add(questRequired, quantity);
+                                steps[idxStepAddCondition - 1] = tempStep;
+                            }
+                            //if (typeCondition == 8)
+                            //{
+                            //    // Res Battle 1 ==> Win 
+                            //    // Res Battle 2 ==> Lose
+                            //    // Res battle 3 ==> Runout
+                            //    resBattle = read16(data, pos + 1);
+                            //    if (mapid == 12001)
+                            //    {
+                            //        Console.WriteLine("resBattle >>" + resBattle);
+                            //    }
+                            //    step.resBattle = resBattle;
+                            //}
+
+                            //if (type == 3)
+                            //{
+                            //    idBox = data[pos - 1];
+                            //}
+                            pos += 17;
+                            continue;
+                        }
+                        else {
+                            conditions = 0;
+                            condition = 0;
+                        }
                         Step step = new Step();
+                        step.requiredItem = new Dictionary<ushort, ushort>();
+                        step.requiredNpc = new List<ushort>();
+                        step.requiredQ = new Dictionary<ushort, List<ushort>>();
+                        step.receivedQ = new Dictionary<ushort, List<ushort>>();
+                        step.rootBit = new List<ushort>();
                         step.qIndex = idx;
                         step.subStepIds = new List<ushort>();
-
-                        //idxSubStep++;
-                        int fromPos = pos;
                         ushort idxStep = data[pos];
                         step.stepId = idxStep;
                         pos++;
@@ -567,7 +672,7 @@ namespace TS_Server.DataTools
                         step.type = type;
                         pos += 2;
                         ushort questId = read16(data, pos - 1);
-                        if (mapid == 12001 & i == 15) Console.WriteLine("questId >>" + questId);
+                        //if (mapid == 12001 & i == 15) Console.WriteLine("questId >>" + questId);
                         ushort optionId = 0;
                         ushort resBattle = 0;
                         ushort idBox = 0;
@@ -578,13 +683,68 @@ namespace TS_Server.DataTools
                             ushort idDialog = data[pos - 1];
                             step.idDialog = idDialog;
                             optionId = read16(data, pos + 1);
-                            step.optionId = optionId;
-                            //if (mapid == 12001 & i == 15) Console.WriteLine("optionId >> " + optionId + " idDialog "+ idDialog);
-                            if (mapid == 12007) Console.WriteLine("optionId >> " + optionId + " idDialog " + idDialog);
+                            step.optionId = optionId; 
                         }
                         if (type == 2)
                         {
                             step.questId = questId;
+                            ushort unknown_1 = data[pos + 1]; // 1 + 2 + 3 
+                            ushort unknown_2 = data[pos + 2]; // 0 + 5
+                            ushort required = data[pos + 3]; // 0 + 1 + 2 
+                            if (required == 1 | required == 2)
+                            {
+                                step.requiredQ.Add(questId, new List<ushort> { unknown_1, unknown_2, required });
+                            }
+                            if (required == 0 || unknown_1 == 2)
+                            {
+                                step.receivedQ.Add(questId, new List<ushort> { unknown_1, unknown_2, required });
+                            }
+                            step.rootBit.Add(unknown_1);
+                            step.rootBit.Add(unknown_2);
+                            step.rootBit.Add(required);
+                        }
+                        // 02 07 00 00 01 04 0F 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00
+                        // 11 07 05 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 0F 00 00 00 00
+                        // 11 07 05 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 0F 00 00 00 00
+                        if (type == 7)
+                        {
+                            ushort type_required = data[pos - 1];
+                            ushort unknown_1 = data[pos];
+                            ushort unknown_2 = data[pos + 1];
+                            ushort unknown_3 = data[pos + 2];
+                            ushort requiredLevel = read16(data, pos + 3);
+                            if (type_required == 0 & requiredLevel > 0)
+                            {
+                                step.requiredLevel = requiredLevel;
+                            }
+                            if (type_required == 5 & unknown_2 == 1)
+                            {
+                                // Full pet 
+                                step.requiredSlotPet = true;
+                            }
+                            if (type_required == 5 && unknown_2 == 2)
+                            {
+                                // available slot pet 
+                                step.requiredSlotPet = false;
+                            }
+                            
+                        }
+                        if (type == 9)
+                        {
+                            //sample 09 00 00 01 05 86 2F
+                            ushort unknown_1 = read16(data, pos-1);
+                            ushort unknown_2 = data[pos + 1];
+                            ushort unknown_3 = data[pos + 2];
+                            ushort requiredNpc = read16(data, pos + 3);
+                            step.requiredNpc.Add(requiredNpc);
+                        }
+                        if (type == 1)
+                        {
+                            ushort itemRequired = read16(data, pos - 1);
+                            ushort quantity = data[pos + 1];
+                            ushort unknown_1 = data[pos + 2];
+                            ushort unknown_2 = read16(data, pos + 3);
+                            step.requiredItem.Add(itemRequired, quantity);
                         }
                         if (type == 8)
                         {
@@ -602,37 +762,40 @@ namespace TS_Server.DataTools
                         if (type == 3)
                         {
                             idBox = data[pos - 1];
-                            if (mapid == 12004)
-                            {
-                                Console.WriteLine("idBox >>" + idBox);
-                            }
+                        }
+                        if (type == 0)
+                        {
+                            step.normalTalk = true;
+                        }
+                        else {
+                            step.normalTalk = false;
                         }
                         pos += 2;
-                        ushort unk2 = read16(data, pos);
+                        ushort unk2 = read16(data, pos-1);
+                       
                         pos += 2;
-                        ushort unk3 = read16(data, pos);
+                        ushort unk3 = read16(data, pos-1);
+                        if (type == 2)
+                        {
+                            step.status = unk3;
+                           
+                        }
                         pos += 2;
+                        
                         ushort unk4 = read16(data, pos);
                         pos += 9;
                         ushort prevStep = data[pos];
                         pos++;
+                        conditions = data[pos];
+                        if (conditions > 1)
+                        {
+                            condition++;
+                            idxStepAddCondition = (ushort)(steps.Count + 1);
+                        }
                         // Here pos is total sub step
                         pos += 3;
                         ushort totalPackages = data[pos];
                         int toPos = pos;
-                        //if (type == 8)
-                        //{
-
-                        //    if (mapid == 12991)
-                        //    {
-                        //        Console.WriteLine("here >> + " + mapid);
-                        //        for (int m = fromPos; m < toPos; m++)
-                        //        {
-                        //            Console.Write(" " + data[m]);
-                        //        }
-                        //        Console.WriteLine();
-                        //    }
-                        //}
                         pos++;
                         List<PackageSend> listPackages = new List<PackageSend>();
                         ushort npcId = 0;
@@ -648,10 +811,11 @@ namespace TS_Server.DataTools
                             {
                                 step.npcIdInMap = idBox;
                             }
-                            else if (k == 0 & (data[pos + 3] == 1 | data[pos + 3] == 6) & data[pos + 4] == 3)
+                            else if ((data[pos + 3] == 1 | data[pos + 3] == 6) & data[pos + 4] == 3)
                             {
                                 npcId = data[pos + 5];
-                                step.npcIdInMap = npcId;
+                                if (step.npcIdInMap ==0)
+                                    step.npcIdInMap = npcId;
                             }
                             if (data[pos + 3] == 6 & data[pos + 4] == 3)
                             {
@@ -715,54 +879,6 @@ namespace TS_Server.DataTools
 
                     //}
                     #endregion
-
-                    //talkQuestItem.
-                    //int[] continueQuest = new int[] { i + 1, 0x00, 0x06, 0xB9, 0x75, 0xAA, 0xC8, 0xA7, 0xF5 };
-                    //int posNextQuest = findSubArrInArr(data, pos, continueQuest);
-                    //Console.WriteLine(" post +++ " + posNextQuest);
-                    //if (posNextQuest > -1)
-                    //{
-                    //    pos += 0x2C;
-                    //    ushort unknow_id_1 = read16(data, pos);
-
-                    //    pos += 7;
-                    //    ushort unknow_id_2 = read16(data, pos);
-                    //    //showList(mapid);
-                    //    NpcOnMap[] temp = listNpcOnMap[mapid];
-                    //    var index = Array.FindIndex(listNpcOnMap[mapid], row => row.idOnMap == unknow_id_1);
-                    //    if (index > -1 & unknow_id_2 >= 10000 & unknow_id_2 <= 65535)
-                    //    {
-                    //        listNpcOnMap[mapid][index].idDialog = unknow_id_2;
-                    //    }
-                    //    if (pos >= data.Length)
-                    //    {
-                    //        return;
-                    //    }
-                    //    //Console.WriteLine("pos >> " + pos + " " + "nb_talk_quest 1 " + unknow_id_1 + " idTalk " + unknow_id_2 + " " + data[pos] + " " + data[pos + 1]);
-                    //    //while (pos < posNextQuest)
-                    //    //{
-                    //    //    pos += 0x2C;
-                    //    //    ushort unknow_id_1 = read16(data, pos);
-                    //    //    ushort unknow_id_1_ = data[pos];
-                    //    //    int idTalk = read16_reverse(data, pos);
-                    //    //    pos += 6;
-
-                    //    //    ushort unknow_id_2 = read16(data, pos);
-                    //    //    ushort unknow_id_2_ = data[pos];
-
-                    //    //    if (unknow_id_1_ == 0 & unknow_id_2_ == 0)
-                    //    //    {
-                    //    //        continue;
-                    //    //    }
-                    //    //    Console.Write("pos >> " + pos +  " " + "nb_talk_quest 1 " + unknow_id_1+ " idTalk  " + idTalk);
-                    //    //    Console.WriteLine();
-                    //    //    pos += 2;
-                    //    //}
-                    //    pos = posNextQuest;
-                    //}
-
-
-
                 }
 
                 listStepOnMap.Add(mapid, steps);
@@ -843,5 +959,31 @@ namespace TS_Server.DataTools
             return -1;
         }
 
+        //public static Step getStepByQuest(TSClient client, ushort npcIdOnMap) {
+        //    List<Step> steps = listStepOnMap[client.map.mapid].FindAll(item => item.npcIdInMap == npcIdOnMap);
+
+        //    List<Step> stepsQ = steps.FindAll(item => !item.questId.Equals(null) | item.questId > 0);
+        //    Step step;
+        //    if (stepsQ.Count > 0)
+        //    {
+        //        ushort questId = stepsQ[0].questId;
+        //        int currentStep = client.checkQuest(client, questId);
+        //        if (currentStep > -1)
+        //        {
+        //            step = stepsQ.Find(item => item.stepId == currentStep);
+        //        }
+        //        else
+        //        {
+        //            step = stepsQ.Find(item => item.status != 1);
+        //            currentStep = step.stepId;
+        //        }
+        //        client.insertOrUpdateQuest(client, questId, (ushort)currentStep);
+        //    }
+        //    else
+        //    {
+        //        step = steps[0];
+        //    }
+        //    return step;
+        //}
     }
 }

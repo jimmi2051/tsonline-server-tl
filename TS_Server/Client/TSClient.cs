@@ -34,6 +34,7 @@ namespace TS_Server.Client
         public ushort idDialog;
         public ushort idBattle;
         public ushort resBattle;
+        public bool finishQ = false;
         public TSClient(Socket s, String id)
         {
             socket = s;
@@ -89,6 +90,136 @@ namespace TS_Server.Client
             }
 
             return ret;
+        }
+
+
+        public int checkQuest(TSClient client, ushort questId, ushort bit_3 = 0, ushort bit_4 = 0, ushort bit_5 = 0)
+        {
+            uint userId = client.accID;
+            //check exist, online, create char(เช็คตัวละครออนไลน์)
+            int ret = -1;
+            var c = new TSMysqlConnection();
+            string sql = "SELECT questId FROM quest WHERE charId = " + userId + " and questId = " + questId;
+            if (bit_3 != 0)
+            {
+                sql += " and bit_3 = " + bit_3;
+            }
+            if (bit_4 != 0)
+            {
+                sql += " and bit_4 = " + bit_4;
+            }
+            if (bit_5 != 0)
+            {
+                sql += " and bit_5 = " + bit_5;
+            }
+            MySqlDataReader data = c.selectQuery(sql);
+
+            if (!data.Read())
+                ret = -1;
+            else
+            {
+                ret = data.GetInt16(0);
+            }
+
+
+            data.Close();
+            c.connection.Close();
+            return ret;
+        }
+        public List<int> getCurrentStep(TSClient client, ushort questId)
+        {
+            List<int> res = new List<int>();
+            uint userId = client.accID;
+            var c = new TSMysqlConnection();
+            string sql = "SELECT bit_3, bit_4, bit_5 FROM quest WHERE charId = " + userId + " and questId = " + questId;
+
+            MySqlDataReader data = c.selectQuery(sql);
+
+            if (!data.Read())
+            {
+                res.Add(0);
+                res.Add(0);
+                res.Add(0);
+            }
+            else
+            {
+                res.Add(data.GetInt16(0));
+                res.Add(data.GetInt16(1));
+                res.Add(data.GetInt16(2));
+            }
+
+
+            data.Close();
+            c.connection.Close();
+            return res;
+        }
+        //public void checkMyQuest(TSClient client, )
+        //{
+        //    uint userId = client.accID;
+        //    uint mapId = client.map.mapid;
+        //    var c = new TSMysqlConnection();
+        //    MySqlDataReader data = c.selectQuery("SELECT questId, isFinish, bit_3, bit_4, bit_5 FROM quest WHERE charId = " + userId + " and mapId = " + mapId);
+        //    while (data.Read())
+        //    {
+        //        int s = data.GetInt32("slot");
+        //        int sid = data.GetInt32("pet_sid");
+        //        pet[s - 1] = new TSPet(this, sid, (byte)s);
+        //        pet[s - 1].loadPetDB();
+        //    }
+        //    data.Close();
+        //    c.connection.Close();
+        //}
+
+        public void insertOrUpdateQuest(TSClient client, ushort questId, ushort bit_3 = 0, ushort bit_4 = 0, ushort bit_5 = 0)
+        {
+            #region Old Code 
+            //var c = new TSMysqlConnection();
+            //c.connection.Open();
+            //int currentStep = checkQuest(client, questId);
+            //if (currentStep == -1)
+            //{
+            //    // Add new quest
+            //    var cmd = new MySqlCommand();
+            //    cmd.Connection = c.connection;
+            //    cmd.CommandText = "INSERT INTO quest (questId, charId, stepId, mapId, isFinish) "
+            //                  + "VALUES (" + questId + " , " + client.accID + "," + stepId + "," + client.map.mapid + "," + isFinish + ");";
+            //    cmd.Prepare();
+            //    cmd.ExecuteNonQuery();
+
+            //}
+            //else
+            //{
+            //    var cu = new TSMysqlConnection();
+            //    Console.WriteLine(" Update Q " + questId + " step >> " + stepId);
+            //    Console.WriteLine(" Update charId " + client.accID + " client.map.mapid >> " + client.map.mapid);
+            //    cu.updateQuery("UPDATE `quest` SET `stepId` = " + stepId  + " `isFinish` = " + isFinish + " WHERE `charId` = " + client.accID + " and `questId` = " + questId + " and `mapId` = " + client.map.mapid + ";");
+
+            //}
+            #endregion
+            var c = new TSMysqlConnection();
+            c.connection.Open();
+            int currentStep = checkQuest(client, questId);
+            if (currentStep == -1)
+            {
+                // Add new quest
+                var cmd = new MySqlCommand();
+                cmd.Connection = c.connection;
+                cmd.CommandText = "INSERT INTO quest (questId, charId, bit_3, bit_4, bit_5) "
+                              + "VALUES (" + questId + " , " + client.accID + "," + bit_3 + "," + bit_4 + "," + bit_5 + ");";
+                cmd.Prepare();
+                cmd.ExecuteNonQuery();
+            }
+
+            else
+            {
+                var cu = new TSMysqlConnection();
+                //Console.WriteLine(" Update Q " + questId + " step >> " + stepId);
+                Console.WriteLine(" Update charId " + client.accID + " client.map.mapid >> " + client.map.mapid);
+                cu.updateQuery("UPDATE `quest` SET `bit_3` = " + bit_3 + ", `bit_4` = " + bit_4 + ", `bit_5` = " + bit_5 + " WHERE `charId` = " + client.accID + " and `questId` = " + questId + ";");
+
+            }
+
+            c.connection.Close();
         }
 
         public bool isTeamLeader()
@@ -302,7 +433,6 @@ namespace TS_Server.Client
             }
             if (client.idxQ > 0)
             {
-
                 DataTools.Step temp_step = DataTools.EveData.listStepOnMap[client.map.mapid].Find(item => client.idxQ == item.qIndex & item.resBattle == client.resBattle);
                 client.idxQ = 0;
                 if (temp_step.packageSend != null)
@@ -318,6 +448,36 @@ namespace TS_Server.Client
                     client.continueMoving();
                     return;
                 }
+            }
+            if (client.finishQ == true)
+            {
+                DataTools.Step temp_step = new DataTools.Step();
+                DataTools.Step[] steps = DataTools.EveData.listStepOnMap[client.map.mapid].FindAll(item => item.npcIdInMap == client.idNpcTalking).ToArray();
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    DataTools.Step item = steps[i];
+                    if (item.stepId == 15)
+                        Console.WriteLine(item.stepId);
+                    if (item.requiredQ.Count > 0)
+                    {
+
+                        foreach (KeyValuePair<ushort, List<ushort>> entry in item.requiredQ)
+                        {
+                            if (entry.Value.ElementAt(0) == 1 & entry.Value.ElementAt(1) == 2 & entry.Value.ElementAt(2) == 1)
+                            {
+                                temp_step = item;
+                            }
+                        }
+                    }
+                }
+                if (!temp_step.questId.Equals(null))
+                {
+                    step = temp_step;
+                    client.currentStep = temp_step;
+                    client.idxDialog = 0;
+                    client.selectMenu = 0;
+                }
+                client.finishQ = false;
             }
             //if (step.packageSend.Equals(null))
             //{
@@ -354,7 +514,7 @@ namespace TS_Server.Client
                 client.idBattle = idBattle;
                 client.idxQ = step.qIndex;
             }
-            if (packageToSend[3] == 0 & packageToSend[4] == 3 & packageToSend[6] == 0 & packageToSend[7] == 3)
+            if (packageToSend[3] == 0 & packageToSend[4] == 3 & packageToSend[6] == 0 & packageToSend[7] == 1)
             {
                 ushort idNpcInMapJoin = packageToSend[5];
                 var index = Array.FindIndex(DataTools.EveData.listNpcOnMap[client.map.mapid], row => row.idOnMap == idNpcInMapJoin);
@@ -368,13 +528,39 @@ namespace TS_Server.Client
                 ushort quantity = packageToSend[8];
                 client.getChar().inventory.addItem(idItem, quantity, true);
             }
+            if (packageToSend[3] == 0 & packageToSend[4] == 2)
+            {
+                ushort questId = (ushort)(PacketReader.read16(packageToSend, 5));
+                ushort unknown = packageToSend[7];
+                ushort isFinish = packageToSend[8];
+                if (unknown == 1 & isFinish == 1)
+                {
+                    List<int> currentPackageStep = getCurrentStep(client, questId);
+                    int bit_1 = currentPackageStep[0];
+                    int bit_2 = currentPackageStep[1];
+                    int bit_3 = currentPackageStep[2];
+                    if ((bit_1 == 2 | bit_1 == 0 | bit_1 == 3) & bit_2 == 0)
+                    {
+                        client.insertOrUpdateQuest(client, questId, 1, 5, 1);
+                    }
+                    else
+                    {
+                        client.insertOrUpdateQuest(client, questId, (ushort)bit_1, (ushort)bit_2, (ushort)(bit_3 + 1));
+                    }
+                    if (bit_1 == 1 & bit_1 == 5 & bit_3 == 1)
+                    {
+                        client.finishQ = true;
+                    }
+                }
+            }
             Console.WriteLine("Senddd click npc > " + String.Join(",", p2.getData()));
             client.reply(p2.send());
             client.idxDialog++;
-
         }
+
         public void ClickkNpc(byte[] data, TSClient client)
         {
+            //TSCharacter ch = client.getChar();
             byte[] unknow = new byte[] { data[0], data[1] };
             int id_unknow = convertArrayByteToInt(unknow);
 
@@ -388,10 +574,130 @@ namespace TS_Server.Client
             {
                 ushort idNpc = DataTools.EveData.listNpcOnMap[client.map.mapid][index].idNpc;
                 client.idNpc = idNpc;
-                List<DataTools.Step> steps = DataTools.EveData.listStepOnMap[client.map.mapid].FindAll(item => item.npcIdInMap == id_talking);
-                DataTools.Step step = steps[1];
-                currentStep = step;
-                processStep(client);
+
+                DataTools.Step[] steps = DataTools.EveData.listStepOnMap[client.map.mapid].FindAll(item => item.npcIdInMap == id_talking).ToArray();
+                //Console.WriteLine("Count >> " + steps.Count);
+                List<DataTools.Step> stepValidate = new List<DataTools.Step>();
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    DataTools.Step item = steps[i];
+                    if (item.requiredQ.Count > 0)
+                    {
+                        bool isValidate = true;
+                        foreach (KeyValuePair<ushort, List<ushort>> entry in item.requiredQ)
+                        {
+                            int idxCurrentQ = checkQuest(client, entry.Key, entry.Value.ElementAt(0), entry.Value.ElementAt(1), entry.Value.ElementAt(2));
+                            if (idxCurrentQ == -1)
+                            {
+                                isValidate = false;
+                                break;
+                            }
+                        }
+                        if (!isValidate)
+                        {
+                            continue;
+                        }
+                    }
+                    if (item.requiredSlotPet && chr.next_pet != 4)
+                    {
+                        continue;
+                    }
+                    if (item.requiredItem.Count > 0)
+                    {
+                        bool isValidate = true;
+                        foreach (KeyValuePair<ushort, ushort> entry in item.requiredItem)
+                        {
+                            int idxItem = chr.inventory.haveItem(entry.Key);
+                            if (idxItem == -1)
+                            {
+                                isValidate = false;
+                                break;
+                            }
+
+                        }
+                        if (!isValidate)
+                        {
+                            continue;
+                        }
+                    }
+                    if (item.requiredNpc.Count > 0)
+                    {
+                        bool isFound = false;
+                        item.requiredNpc.ForEach(npcId =>
+                        {
+                            for (int sl = 0; sl < chr.next_pet; sl++)
+                                if (chr.pet[sl].NPCid == npcId)
+                                    isFound = true;
+                        });
+                        if (!isFound)
+                        {
+                            continue;
+                        }
+                    }
+                    if (item.receivedQ.Count > 0)
+                    {
+                        
+                        foreach (KeyValuePair<ushort, List<ushort>> entry in item.receivedQ)
+                        {
+                            ushort bit_1 = entry.Value.ElementAt(0);
+                            ushort bit_2 = entry.Value.ElementAt(1);
+                            ushort bit_3 = entry.Value.ElementAt(2);
+                            int idxCurrentQ = checkQuest(client, entry.Key);
+                            if (idxCurrentQ == -1 & ((bit_1 == 3 && bit_2 == 5 && bit_3 == 0) | (bit_1 == 2 & bit_2 == 0)))
+                            {
+                                
+                                insertOrUpdateQuest(client, entry.Key, entry.Value.ElementAt(0), entry.Value.ElementAt(1), entry.Value.ElementAt(2));
+                            }                         
+                        }
+                      
+                        //if (isValidate)
+                        //{
+                        //    stepValidate.Add(item);
+                        //}
+                    }
+
+                    if (!stepValidate.Contains(item))
+                    {
+                        stepValidate.Add(item);
+                    }
+                    //Console.WriteLine("Item valid >> " + item.stepId);
+                    //stepValidate.Add(item);
+                }
+                if (stepValidate.Count > 0)
+                {
+                    
+
+                    currentStep = stepValidate.FirstOrDefault();
+                    stepValidate.ForEach(item =>
+                    {
+                        if (item.questId > 0)
+                        {
+                            Console.WriteLine(" here is goo >" + item.stepId);
+                            List<int> currentPackageStep = getCurrentStep(client, item.questId);
+                            int bit_1 = currentPackageStep[0];
+                            int bit_2 = currentPackageStep[1];
+                            int bit_3 = currentPackageStep[2];
+                            ushort r_bit_1 = item.rootBit.ElementAt(0);
+                            ushort r_bit_2 = item.rootBit.ElementAt(1);
+                            ushort r_bit_3 = item.rootBit.ElementAt(2);
+
+                            if (bit_1 == (int)r_bit_1 & bit_2 == (int)r_bit_2 & bit_3 == (int)r_bit_3)
+                            {
+                                currentStep = item;
+                            }
+                        }
+                        
+                    });
+
+                    Console.WriteLine("Steppp validated >>>" + currentStep.stepId);
+                    processStep(client);
+
+                }
+                else
+                {
+                    client.continueMoving();
+                }
+
 
                 //byte[] arr = new byte[] { 244, 68, 17, 0, 20, 1, 0, 0, 0, 1, 6, 3, 2, 0, 0, 0, 0, 0, 0, 6, 0 };
                 ////// Chu Tien trang
@@ -444,24 +750,20 @@ namespace TS_Server.Client
                 //}
 
             }
-            //int idDialog = 10666;
-            //int idDialog2 = DataTools.EveData.listNpcOnMap[client.map.mapid][index].idDialog;
-            //if (index > -1 && idDialog2 > 10000 & idDialog2 < 65000)
-            //{
-            //    idDialog = idDialog2;
-            //    //client.step = 0;
-            //}
+            else
+            {
+                int idDialog = 10666;
+                PacketCreator p = new PacketCreator(0x14, 1);
+                p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
+                client.unkIdNpc = (ushort)(PacketReader.read16(data, 1) + 2);
+                p.add16(ushort.Parse((PacketReader.read16(data, 1) + 2).ToString()));
+                p.add16(0); p.add16(0); p.add16(0);
+                p.add16((ushort)idDialog);//you are hero :))
 
+                Console.WriteLine("Unknown NPC > " + String.Join(",", p.getData()));
+                client.reply(p.send());
+            }
 
-            //PacketCreator p = new PacketCreator(0x14, 1);
-            //p.addByte(0); p.add16(0); p.addByte(0); p.addByte(1);
-            //client.unkIdNpc = (ushort)(PacketReader.read16(data, 1) + 2);
-            //p.add16(ushort.Parse((PacketReader.read16(data, 1) + 2).ToString()));
-            //p.add16(0); p.add16(0); p.add16(0);
-            //p.add16((ushort)idDialog);//you are hero :))
-
-            //Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
-            //client.reply(p.send());
         }
 
         public void TalkQuestNpc(byte[] data, TSClient client)
