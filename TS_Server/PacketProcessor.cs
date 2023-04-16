@@ -28,17 +28,12 @@ namespace TS_Server
         {
             int n = 0; // offset
             int packet_len;
-            bool fin = false;
             while (true)
             {
                 //Console.WriteLine("DataBuff " + BitConverter.ToString(DataBuff));
                 if (DataBuff[n] != 0x59 || DataBuff[n + 1] != 0xE9)
                     break;
                 packet_len = (UInt16)((DataBuff[n + 2] ^ 0xAD) + (DataBuff[n + 3] ^ 0xAD) * 255);
-                //Console.WriteLine(">>> Mu1 " + (0xA9 ^ 0xAD));
-                //Console.WriteLine(">>> Mu2 " + ((0xAD ^ 0xAD) * 255));
-                // A9*AD + AD*AD*255
-                // 7235 + 110A35D
                 byte[] data = new byte[packet_len];
 
                 if (n + packet_len + 4 >= DataBuff.Length)
@@ -77,10 +72,10 @@ namespace TS_Server
                     new ChatHandler(client, data);
                     break;
                 case 5: //some weird packet 05 06 0000000000000000000 of client appears that flood the buffer, have to fix later
-                    client.continueMoving();
+                    new ActionHandler(client, data);
+                    //client.continueMoving();
                     break;
                 case 6:
-                    //Console.WriteLine("Move");
                     new MoveHandler(client, data);
                     break;
                 case 8:

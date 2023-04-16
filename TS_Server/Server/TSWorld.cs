@@ -52,8 +52,8 @@ namespace TS_Server.Server
                     }
 
                     client.getChar().mapID = dest[0];
-                    client.getChar().mapX = dest[1];
-                    client.getChar().mapY = dest[2];
+                    client.getChar().mapX = (ushort)(dest[1] - 100);
+                    client.getChar().mapY = (ushort)(dest[2] - 0);
                     //client.map.removePlayer(client.accID);
 
                     listMap[dest[0]].addPlayerWarp(client, dest[1], dest[2]);
@@ -73,6 +73,7 @@ namespace TS_Server.Server
                 }
                 else
                 {
+                  
                     Console.WriteLine("Warp data helper : warpid " + warpid + " not found");
                     EveData.loadCoor(start, 12000, warpid);
                 }

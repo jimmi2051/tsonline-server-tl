@@ -1,5 +1,0 @@
-server	127.0.0.1
-database	tsonline
-uid	root
-password	
-port	3306

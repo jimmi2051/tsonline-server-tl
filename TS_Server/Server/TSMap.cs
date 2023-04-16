@@ -44,46 +44,47 @@ namespace TS_Server.Server
         }
         public void initItemOnMap(TSClient client)
         {
+            Console.WriteLine("Client Map +++ " + client.map.mapid);
             ushort mapId = client.map.mapid;
-            List<ItemOnMap> itemOnMaps = EveData.listItemOnMap[mapId];
-            if (itemOnMaps != null)
+            if (EveData.listNpcOnMap.ContainsKey(mapId))
             {
-                itemOnMaps.ForEach(item =>
+                List<ItemOnMap> itemOnMaps = EveData.listItemOnMap[mapId];
+                if (itemOnMaps != null)
                 {
-                    Console.Write("item >> " + item.idItem);
-                    ushort slot = 1;
-                    PacketCreator p = new PacketCreator();
-                    p = new PacketCreator(23, 3);
-                    byte[] id = TSClient.convertIntToArrayByte4(item.idItem);
-                    byte[] posX =TSClient.convertIntToArrayByte4(item.posX);
-                    byte[] posY = TSClient.convertIntToArrayByte4(item.posY);
-                    Console.WriteLine("pos x ==> " + item.posX);
-                    Console.WriteLine("pos y ==> " + item.posY);
-                    p.addBytes(id);
-                    p.addBytes(posX);
-                    p.addBytes(posY);
-                    //p.addByte(244);
-                    //p.addByte(68);
-                    //p.addByte(4);
-                    //p.addByte(0);
-                    //p.addByte(23);
-                    //p.addByte(9);
-                    //p.addByte(3);
-                    p.addByte(1);
-                    
-
-                    // 244,68,9,0,23,3,83,156,170,0,203,1,1,244,68,4,0,23,9,3,1
-                    // 244 68 9 0 23,3,18,125,72,2,0,0
-                    //p.add16(item.idItem);
-                    //p.add16(item.posX);
-                    //p.add16(item.posY);
-                    Console.WriteLine("Senddd click npc > " + String.Join(",", p.getData()));
-                    //BroadCast(client, p.send(), false);
-                    //BroadCast(client, p.send(), true);
-                    sendToAll(p.send());
-                });
+                    itemOnMaps.ForEach(item =>
+                    {
+                        PacketCreator p = new PacketCreator();
+                        p = new PacketCreator(23, 3);
+                        byte[] id = TSClient.convertIntToArrayByte4(item.idItem);
+                        byte[] posX = TSClient.convertIntToArrayByte4(item.posX);
+                        byte[] posY = TSClient.convertIntToArrayByte4(item.posY);
+                        p.addBytes(id);
+                        p.addBytes(posX);
+                        p.addBytes(posY);
+                        p.addByte(0);
+                        Console.WriteLine("Send Items > " + String.Join(",", p.getData()));
+                        BroadCast(client, p.send(), true);
+                    });
+                }
             }
+            
         }
+
+        //public void removeItemOnMap(TSClient client, int idItem)
+        //{
+        //    PacketCreator p = new PacketCreator();
+        //    p = new PacketCreator(23, 3);
+        //    byte[] id = TSClient.convertIntToArrayByte4(idItem);
+
+        //    p.addBytes(id);
+        //    p.addByte(0);
+        //    p.addByte(0);
+        //    p.addByte(0);
+        //    p.addByte(0);
+        //    p.addByte(0);
+        //    client.reply(p.send());
+        //    Console.WriteLine("Remove ITEM ++++");
+        //}
         public void addPlayer(TSClient client)
         {
             listPlayers.Add(client.accID, client);

@@ -375,6 +375,7 @@ namespace TS_Server.Server
                     battleBroadcast(new PacketCreator(new byte[] { 0xb, 1, 3, (byte)i, 0 }).send()); //char walk out
                     if (chr.client.idxQ > 0)
                     {
+                        byte[] temp = new byte[0];
                         if (win)
                         {
                             chr.client.resBattle = 1;

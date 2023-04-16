@@ -201,7 +201,8 @@ namespace TS_Server.PacketHandlers
                 {
 
                     ushort battleid = ushort.Parse(msg.Substring(8));
-                    new TSBattleNPC(client, 3, BattleData.battleList[battleid].getGround(), BattleData.battleList[battleid].getNpcId());
+                    //new TSBattleNPC(client, 3, EveData.battleListOnMap[map_id][battleid].getGround(), EveData.battleListOnMap[map_id][battleid].getNpcId());
+                    new TSBattleNPC(client, 3, EveData.battleListOnMap[client.map.mapid][battleid].getGround(), EveData.battleListOnMap[client.map.mapid][battleid].getNpcId());
                     return true;
                 }
                 else if (String.Compare(msg, 0, "/motd ", 0, 5, true) == 0)

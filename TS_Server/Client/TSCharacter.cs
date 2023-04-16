@@ -284,14 +284,14 @@ namespace TS_Server.Client
 
         public void addPet(ushort npcid, int bonus, byte quest) //สัตว์เลี้ยง
         {
-            Console.WriteLine(next_pet + " " + npcid);
+            //Console.WriteLine(next_pet + " " + npcid);
             for (int i = 0; i < next_pet; i++)
                 if (pet[i].NPCid == npcid) return;
             if (next_pet < 4 && NpcData.npcList.ContainsKey(npcid))
             {
                 pet[next_pet] = new TSPet(this, (byte)(next_pet + 1), quest);
                 pet[next_pet].initPet(NpcData.npcList[npcid]);                            
-                Console.WriteLine("Pet id " + npcid + ", sid " + pet[next_pet].pet_sid + " added in slot " + (next_pet + 1) + " Quest " + (pet[next_pet].quest));
+                //Console.WriteLine("Pet id " + npcid + ", sid " + pet[next_pet].pet_sid + " added in slot " + (next_pet + 1) + " Quest " + (pet[next_pet].quest));
                 pet[next_pet].sendNewPet();
                 for (int i = 0; i < bonus; i++)
                     pet[next_pet].getSttPoint();
@@ -331,6 +331,7 @@ namespace TS_Server.Client
                 pet[slot - 1] = null;
 
                 if (pet_battle == slot - 1) pet_battle = -1;
+   
                 nextPet();
 
                 PacketCreator p = new PacketCreator(0xf, 2);
@@ -340,13 +341,41 @@ namespace TS_Server.Client
             }
         }
 
+        public void removePet(int idPet)
+        {
+
+            int index = -1;
+            for (int sl = 0; sl < 4; sl++)
+            {
+                if (pet[sl] != null && pet[sl].NPCid == idPet)
+                    index = sl;
+            }
+            if (index > -1)
+            {
+                var c = new TSMysqlConnection();
+
+                c.updateQuery("DELETE FROM pet WHERE pet_sid=" + pet[index].pet_sid);
+                pet[index] = null;
+
+                if (pet_battle == index) pet_battle = -1;
+    
+                nextPet();
+
+                PacketCreator p = new PacketCreator(0xf, 2);
+                p.add32(client.accID);
+                p.add8((byte)(index + 1));
+                reply(p.send());
+            }
+        }
         public void nextPet()
         {
             next_pet = 0;
-            while (next_pet < 4)
+
+            for (int i = 0; i < 4; i++)
+            {
                 if (pet[next_pet] != null)
                     next_pet++;
-                else break;
+            }
         }
 
         public void addEquipBonus(ushort prop, int prop_val, int type) //type 0 : equip on, type 1 : unequip

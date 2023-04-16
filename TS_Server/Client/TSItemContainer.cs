@@ -108,8 +108,6 @@ namespace TS_Server.Client
                     items[next_item] = new TSEquipment(this, itemid, (byte)(next_item + 1), 1);
                 else
                     items[next_item] = new TSItem(this, itemid, (byte)(next_item + 1), qty);
-                Console.WriteLine("item " + itemid + " added in slot " + (next_item + 1) + " x " + qty + "pcs");
-
                 if (newItem) items[next_item].sendNewItem(qty);
                 nextSlot();
             }
@@ -117,7 +115,6 @@ namespace TS_Server.Client
             else if (i >= 0 && i < capacity) //stack to existed slot
             {
                 items[i].quantity += qty;
-                Console.WriteLine("item " + itemid + " stacked in slot " + (i + 1) + "nextitem=" + next_item);
                 if (newItem) items[i].sendNewItem(qty);
             }
         }
@@ -164,6 +161,17 @@ namespace TS_Server.Client
                 nextSlot();
             }
             owner.reply(new PacketCreator(new byte[] { 0x17, 9, slot, qty }).send());
+        }
+
+        public void dropItem(int itemId)
+        {
+            int index = items.ToList().FindIndex(item => item.Itemid == itemId);
+            if (index > -1)
+            {
+                items[index] = null;
+                nextSlot();
+            }           
+            owner.reply(new PacketCreator(new byte[] { 0x17, 9, (byte)(index+1), (byte)50 }).send());
         }
 
         public int itemAddable(ushort itemid, byte qty) //return the (slot-1) where new item is stackable, return capacity if need new empty slot

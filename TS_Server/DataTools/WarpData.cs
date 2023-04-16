@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace TS_Server.DataTools
 {
@@ -12,6 +13,55 @@ namespace TS_Server.DataTools
     {
         public static Dictionary<ushort, Dictionary<ushort, ushort[]>> warpList = new Dictionary<ushort, Dictionary<ushort, ushort[]>>();
         public static int warpCount = 0;
+
+        //public static void loadDat()
+        //{
+        //    {
+        //        String FileName = "Warp.Dat";
+        //        int iBlock = 23;
+
+        //        var buffer = getBuffer();
+        //        if (buffer != null)
+        //        {
+        //            int iTotalBlock = buffer.Length / iBlock;
+
+        //            for (int i = 1; i < iTotalBlock; i++)
+        //            {
+        //                TsOnline.Entity.WarpEntity item = new TsOnline.Entity.WarpEntity();
+
+        //                int index = i * iBlock;
+        //                item.LengthName = buffer[index++];
+        //                Array.Reverse(buffer, index, 10);
+        //                sheet.Cells[i + 1, 1].Value = item.Name = Encoding.Default.GetString(buffer, index, item.LengthName).Trim();
+        //                index += 10;
+        //                sheet.Cells[i + 1, 2].Value = item.b1 = ProgressByte(buffer[index++]);
+        //                sheet.Cells[i + 1, 3].Value = item.b2 = ProgressByte(buffer[index++]);
+        //                sheet.Cells[i + 1, 4].Value = item.u1 = ProgressUshort(BitConverter.ToUInt16(buffer, index));
+        //                index += 2;
+        //                sheet.Cells[i + 1, 5].Value = item.i1 = ProgressInt(BitConverter.ToInt32(buffer, index));
+        //                index += 4;
+        //                sheet.Cells[i + 1, 6].Value = item.i2 = ProgressInt(BitConverter.ToInt32(buffer, index));
+        //                index += 4;
+
+        //                listData.Add(item);
+        //            }
+        //        }
+
+        //    }
+
+        //    private byte ProgressByte(byte input)
+        //    {
+        //        return (byte)((input ^ 0xC8) - 1);
+        //    }
+        //    private ushort ProgressUshort(ushort input)
+        //    {
+        //        return (ushort)((input ^ 0x5209) - 1);
+        //    }
+        //    private int ProgressInt(int input)
+        //    {
+        //        return (int)((input ^ 0x0BAEB716) - 1);
+        //    }
+        //}
 
         public static void loadTxt(string input)
         {

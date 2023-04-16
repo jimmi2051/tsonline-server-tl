@@ -1,0 +1,7 @@
+quests.json
+battle.json
+debug.json
+*/bin/*
+*/Debug/*
+EveData.cs
+TSClient.cs

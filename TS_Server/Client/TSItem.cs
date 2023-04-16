@@ -135,6 +135,8 @@ namespace TS_Server.Client
             p.add16(Itemid);
             p.add8(qty);
             p.addZero(9);
+            //p.addByte(0x64);
+            //p.addZero(5);
             container.owner.reply(p.send());
         }
 

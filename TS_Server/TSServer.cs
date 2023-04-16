@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using TS_Server.Server;
 using TS_Server.DataTools;
 using TS_Server.Client;
+using System.Runtime.InteropServices;
+using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace TS_Server
 {
@@ -15,7 +18,7 @@ namespace TS_Server
         private ServerHandler handler = null;
         private TSWorld world;
         private Dictionary<uint, TSClient> listPlayers;
-        private Dictionary<byte[], TSCharacter> listNames;
+
 
         public static TSServer getInstance()
         {
@@ -38,9 +41,13 @@ namespace TS_Server
             Console.WriteLine("Loaded " + NpcData.npcList.Count + " NPCs");
             NpcData.writeToFile("npc.txt");
 
+
+
             Console.WriteLine("Loading Eve data ...");
             Console.WriteLine("Loaded " + EveData.eveList.Count + " EVEs");
             EveData.loadHeaders();
+
+
 
             Console.WriteLine("Loading Warp data ...");
             WarpData.loadTxt("warps.txt");
@@ -67,6 +74,25 @@ namespace TS_Server
 
             Console.WriteLine("Loading Battle data ...");
             BattleData.loadBattle("battle.txt");
+
+            FileStream fss = new FileStream("quests.json", FileMode.Create, FileAccess.Write);
+            StreamWriter ss = new StreamWriter(fss);
+            Console.WriteLine("Loading Quest data ...");
+            var jsonString = JObject.FromObject(EveData.listSteps[12000]).ToString();
+            ss.Write(jsonString);
+            ss.Write("\n");
+            ss.Close();
+            fss.Close();
+
+            FileStream fs = new FileStream("itemOnMap.json", FileMode.Create, FileAccess.Write);
+            StreamWriter s = new StreamWriter(fs);
+            Console.WriteLine("Loading map wrap data ...");
+            var jsonString2 = JArray.FromObject(EveData.listItemOnMap[12002]).ToString();
+            s.Write(jsonString2);
+            s.Write("\n");
+            s.Close();
+            fs.Close();
+
 
             handler = new ServerHandler(6414);
 
