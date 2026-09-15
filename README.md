@@ -76,6 +76,10 @@ ThirdParty/                Bundled DLLs (EntityFramework, log4net, Munq, MySql)
 
 To reset the world state, run `SQL/Wipe.sql`.
 
+## License
+
+Released under the [MIT License](LICENSE).
+
 ## Disclaimer
 
 Educational / preservation project for the TS Online game. Not affiliated with the original publisher. Use at your own risk.
